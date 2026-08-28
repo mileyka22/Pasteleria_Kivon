@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasteleria</title>
+    <base href="http://www.pasteleria.com/"/>
+    <link href="./src/styles/output.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-pink-50 text-slate-800">
+    <header class="border-b border-pink-200 bg-gradient-to-r from-pink-300 via-pink-200 to-lime-200 shadow-sm">
+        <div class="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-wide text-lime-800">Panel principal</p>
+                <h1 class="text-3xl font-bold text-pink-900 sm:text-4xl">Pasteleria Kivon</h1>
+            </div>
+            <div class="rounded-lg bg-white/70 px-4 py-2 text-sm font-semibold text-lime-900 shadow-sm">
+                Administracion de pasteleria
+            </div>
+        </div>
+    </header>
+
+    <nav class="border-b border-lime-200 bg-white">
+        <div class="mx-auto flex max-w-6xl flex-wrap gap-3 px-5 py-4">
+            <a class="inline-flex items-center gap-2 rounded-md bg-pink-100 px-4 py-2 text-sm font-semibold text-pink-900 transition hover:bg-pink-200" href="#" data-view="home">
+                <span class="nav-icon icon-[mdi--home]" aria-hidden="true"></span>
+                Inicio
+            </a>
+            <a class="inline-flex items-center gap-2 rounded-md bg-lime-100 px-4 py-2 text-sm font-semibold text-lime-900 transition hover:bg-lime-200" href="#" data-view="users">
+                <span class="nav-icon icon-[mdi--account-group]" aria-hidden="true"></span>
+                Usuarios
+            </a>
+            <a class="inline-flex items-center gap-2 rounded-md bg-pink-100 px-4 py-2 text-sm font-semibold text-pink-900 transition hover:bg-pink-200" href="#" data-view="productos">
+                <span class="nav-icon icon-[mdi--cake-variant]" aria-hidden="true"></span>
+                Productos
+            </a>
+            <a class="inline-flex items-center gap-2 rounded-md bg-lime-100 px-4 py-2 text-sm font-semibold text-lime-900 transition hover:bg-lime-200" href="#" data-view="clientes">
+                <span class="nav-icon icon-[mdi--account-heart]" aria-hidden="true"></span>
+                Clientes
+            </a>
+            <a class="inline-flex items-center gap-2 rounded-md bg-pink-100 px-4 py-2 text-sm font-semibold text-pink-900 transition hover:bg-pink-200" href="#" data-view="pedidos">
+                <span class="nav-icon icon-[mdi--clipboard-list]" aria-hidden="true"></span>
+                Pedidos
+            </a>
+            <a class="inline-flex items-center gap-2 rounded-md bg-lime-100 px-4 py-2 text-sm font-semibold text-lime-900 transition hover:bg-lime-200" href="#" data-view="ventas">
+                <span class="nav-icon icon-[mdi--cash-register]" aria-hidden="true"></span>
+                Ventas
+            </a>
+        </div>
+    </nav>
+
+    <main class="mx-auto max-w-6xl px-5 py-8">
+        <div id="app"></div>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>

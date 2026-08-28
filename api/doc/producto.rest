@@ -1,0 +1,31 @@
+### Consulta de productos
+GET http://api.pasteleria/productos
+
+### Modificar productos
+
+PUT http://api.pasteleria/productos/1
+
+{
+    "nombre":"Torta de lima",
+    "precio":122.00,
+    "cantidad":5,
+    "ingrediente":"Lima, leche, azucar",
+    "fecha_registro":"2026-06-12",
+    "id_usuario":1
+}
+
+### Eliminar producto
+
+DELETE http://api.pasteleria/productos/6
+###Agregar productos
+
+POST http://api.pasteleria/productos
+
+{
+    "nombre":"Torta de lima",
+    "precio":122.00,
+    "cantidad":5,
+    "ingrediente":"Lima, leche, azucar",
+    "fecha_registro":"2026-06-12",
+    "id_usuario":1
+}
