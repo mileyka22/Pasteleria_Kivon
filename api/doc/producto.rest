@@ -11,7 +11,7 @@ PUT http://api.pasteleria/productos/1
     "cantidad":5,
     "ingrediente":"Lima, leche, azucar",
     "fecha_registro":"2026-06-12",
-    "id_usuario":1
+    "id_personal":1
 }
 
 ### Eliminar producto
@@ -27,5 +27,5 @@ POST http://api.pasteleria/productos
     "cantidad":5,
     "ingrediente":"Lima, leche, azucar",
     "fecha_registro":"2026-06-12",
-    "id_usuario":1
+    "id_personal":1
 }

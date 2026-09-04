@@ -1,2 +1,27 @@
 ### Consulta de usuario
+### Consultar usuarios
 GET http://api.pasteleria/usuario
+
+
+### Agregar usuario
+POST http://api.pasteleria/usuario
+
+{
+    "Username": "usuario_prueba",
+    "Permiso": "Administrador",
+    "Password_hash": "123456"
+}
+
+
+### Modificar usuario
+PUT http://api.pasteleria/usuario/6
+
+{
+    "Username": "usuario_modificado",
+    "Permiso": "Vendedor",
+    "Password_hash": "123456"
+}
+
+
+### Eliminar usuario
+DELETE http://api.pasteleria/usuario/6

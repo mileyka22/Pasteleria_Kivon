@@ -1,17 +1,70 @@
 <?php
+
 include_once __DIR__ . "/../Config/conexionDB.php";
+
 class Usuario
 {
-    private static $usuario = [
-        ["id" => 1, "name" => 'Daniel Rosdriguez', 'email' => "daniel@gmail.com"],
-        ["id" => 2, "name" => 'Maria Lopez', 'email' => "maria@gmail.com"],
-        ["id" => 3, "name" => 'Calos Daniel', 'email' => "carlos@gmail.com"],
-        ["id" => 4, "name" => 'test', 'email' => "daniel@gmail.com"],
-
-    ];
     public static function all()
     {
-        $sql = "SELECT * FROM USUARIO";
-        return ConexionPDO::query($sql); //self::$users;
+        $sql = "SELECT id, Username, Permiso FROM USUARIO";
+
+        return ConexionPDO::query($sql);
+    }
+
+    public static function add($data)
+    {
+        $campos = [];
+        $parametros = [];
+        $valores = [];
+
+        foreach ($data as $columna => $valor) {
+            $campos[] = $columna;
+            $parametros[] = ":$columna";
+            $valores[":$columna"] = $valor;
+        }
+
+        $stringCampos = implode(",", $campos);
+        $stringParametros = implode(",", $parametros);
+
+        $sql = "INSERT INTO USUARIO ($stringCampos)
+                VALUES ($stringParametros)";
+
+        return ConexionPDO::execute($sql, $valores, true);
+    }
+
+    public static function update($id, $data)
+    {
+        if (isset($data['id'])) {
+            unset($data['id']);
+        }
+
+        $campos = [];
+        $valores = [];
+
+        foreach ($data as $columna => $valor) {
+            $campos[] = "$columna=:$columna";
+            $valores[":$columna"] = $valor;
+        }
+
+        $stringCampos = implode(",", $campos);
+
+        $sql = "UPDATE USUARIO
+                SET $stringCampos
+                WHERE id=:id";
+
+        $valores[':id'] = $id;
+
+        return ConexionPDO::execute($sql, $valores, false);
+    }
+
+    public static function delete($id)
+    {
+        $sql = "DELETE FROM USUARIO WHERE id=:id";
+
+        $valores = [
+            ":id" => $id
+        ];
+
+        return ConexionPDO::execute($sql, $valores, false);
     }
 }

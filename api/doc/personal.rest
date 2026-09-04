@@ -1,0 +1,32 @@
+### Consulta de personal
+
+### Consultar personal
+GET http://api.pasteleria/personal
+
+
+### Agregar personal
+POST http://api.pasteleria/personal
+
+{
+    "Nombre": "Personal Prueba",
+    "Cargo": "Vendedor",
+    "Telefono": "70000000",
+    "Salario": 2500.00,
+    "id_usuario": 1
+}
+
+
+### Modificar personal
+PUT http://api.pasteleria/personal/6
+
+{
+    "Nombre": "Personal Modificado",
+    "Cargo": "Administrador",
+    "Telefono": "71111111",
+    "Salario": 3000.00,
+    "id_usuario": 1
+}
+
+
+### Eliminar personal
+DELETE http://api.pasteleria/personal/6

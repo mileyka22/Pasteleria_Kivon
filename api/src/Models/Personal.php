@@ -2,15 +2,16 @@
 
 include_once __DIR__ . "/../Config/conexionDB.php";
 
-class Pedido
+class Personal
 {
+    // Mostrar personal
     public static function all()
     {
-        $sql = "SELECT * FROM PEDIDO";
-
+        $sql = "SELECT * FROM PERSONAL";
         return ConexionPDO::query($sql);
     }
 
+    // Agregar personal
     public static function add($data)
     {
         $campos = [];
@@ -26,12 +27,14 @@ class Pedido
         $stringCampos = implode(",", $campos);
         $stringParametros = implode(",", $parametros);
 
-        $sql = "INSERT INTO PEDIDO ($stringCampos)
-                VALUES ($stringParametros)";
+        $sql = "INSERT INTO PERSONAL ($stringCampos) VALUES ($stringParametros)";
 
-        return ConexionPDO::execute($sql, $valores, true);
+        $result = ConexionPDO::execute($sql, $valores, true);
+
+        return $result;
     }
 
+    // Actualizar personal
     public static function update($id, $data)
     {
         if (isset($data['id'])) {
@@ -48,23 +51,26 @@ class Pedido
 
         $stringCampos = implode(",", $campos);
 
-        $sql = "UPDATE PEDIDO
-                SET $stringCampos
-                WHERE id=:id";
+        $sql = "UPDATE PERSONAL SET $stringCampos WHERE id=:id";
 
         $valores[':id'] = $id;
 
-        return ConexionPDO::execute($sql, $valores, false);
+        $result = ConexionPDO::execute($sql, $valores, false);
+
+        return $result;
     }
 
+    // Eliminar personal
     public static function delete($id)
     {
-        $sql = "DELETE FROM PEDIDO WHERE id=:id";
+        $sql = "DELETE FROM PERSONAL WHERE id=:id";
 
         $valores = [
             ":id" => $id
         ];
 
-        return ConexionPDO::execute($sql, $valores, false);
+        $result = ConexionPDO::execute($sql, $valores, false);
+
+        return $result;
     }
 }

@@ -1,1 +1,34 @@
+### Consulta de clientes
+
 GET http://api.pasteleria/clientes
+
+
+### Modificar cliente
+
+PUT http://api.pasteleria/clientes/1
+
+{
+    "Nombre":"Juan",
+    "Apellidos":"Carlos",
+    "CI":"12345678",
+    "Telefono":"70000000",
+    "Direccion":"Santa Cruz"
+}
+
+
+### Eliminar cliente
+
+DELETE http://api.pasteleria/clientes/7
+
+
+### Agregar cliente
+
+POST http://api.pasteleria/clientes
+
+{
+    "Nombre":"Mia",
+    "Apellidos":"Mamani",
+    "CI":"12345678",
+    "Telefono":"70000000",
+    "Direccion":"Santa Cruz"
+}

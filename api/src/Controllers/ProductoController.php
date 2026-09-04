@@ -80,13 +80,13 @@ class ProductoController{
                 $errores['fecha_registro']="El campo fecha_registro debe ser una fecha valida";
             }
 
-        if(!isset($data['id_usuario']) || trim($data['id_usuario'])=="")
+        if(!isset($data['id_personal']) || trim($data['id_personal'])=="")
             {
-                $errores['id_usuario']="El campo id_usuario es obligatorio";
+                $errores['id_personal']="El campo id_personal es obligatorio";
             }
-        elseif(!is_numeric($data['id_usuario']))
+        elseif(!is_numeric($data['id_personal']))
             {
-                $errores['id_usuario']="El campo id_usuario debe ser numerico";
+                $errores['id_personal']="El campo id_personal debe ser numerico";
             }
 
         return $errores;

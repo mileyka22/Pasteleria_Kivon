@@ -1,1 +1,28 @@
+### Consultar pedidos
 GET http://api.pasteleria/pedido
+
+
+### Agregar pedido
+POST http://api.pasteleria/pedido
+
+{
+    "Estado": "Pendiente",
+    "Detalle": "Torta de chocolate para cumpleaños",
+    "id_cliente": 1,
+    "id_personal": 1
+}
+
+
+### Modificar pedido
+PUT http://api.pasteleria/pedido/6
+
+{
+    "Estado": "Entregado",
+    "Detalle": "Torta de chocolate para cumpleaños",
+    "id_cliente": 1,
+    "id_personal": 1
+}
+
+
+### Eliminar pedido
+DELETE http://api.pasteleria/pedido/6

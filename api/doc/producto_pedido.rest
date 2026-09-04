@@ -1,1 +1,28 @@
+### Consultar productos de pedidos
 GET http://api.pasteleria/producto_pedido
+
+
+### Agregar producto al pedido
+POST http://api.pasteleria/producto_pedido
+
+{
+    "id_producto": 1,
+    "id_pedido": 1,
+    "Cantidad": 2,
+    "Precio_unitario": 120.00
+}
+
+
+### Modificar producto del pedido
+PUT http://api.pasteleria/producto_pedido/7
+
+{
+    "id_producto": 1,
+    "id_pedido": 1,
+    "Cantidad": 3,
+    "Precio_unitario": 120.00
+}
+
+
+### Eliminar producto del pedido
+DELETE http://api.pasteleria/producto_pedido/7

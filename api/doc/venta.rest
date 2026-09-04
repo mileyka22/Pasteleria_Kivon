@@ -1,1 +1,28 @@
+### Consultar ventas
 GET http://api.pasteleria/venta
+
+
+### Agregar venta
+POST http://api.pasteleria/venta
+
+{
+    "Total": 240.00,
+    "Metodo_de_pago": "Efectivo",
+    "id_personal": 1,
+    "id_pedido": 1
+}
+
+
+### Modificar venta
+PUT http://api.pasteleria/venta/6
+
+{
+    "Total": 260.00,
+    "Metodo_de_pago": "Tarjeta",
+    "id_personal": 1,
+    "id_pedido": 1
+}
+
+
+### Eliminar venta
+DELETE http://api.pasteleria/venta/6
