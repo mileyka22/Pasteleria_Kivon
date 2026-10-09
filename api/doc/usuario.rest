@@ -1,5 +1,6 @@
 ### Consulta de usuario
-### Consultar usuarios
+### Consultar usuario 
+
 GET http://api.pasteleria/usuario
 
 

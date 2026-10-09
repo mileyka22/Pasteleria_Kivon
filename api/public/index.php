@@ -19,6 +19,7 @@ $route=new Router();
 //direccion para usuarios
 $route->add('GET','/','UsuarioController@getAll');
 $route->add('GET','/usuario','UsuarioController@getAll');
+$route->add('GET','/usuario/{id}','UsuarioController@getAll');
 $route->add('POST','/usuario','UsuarioController@add');
 $route->add('PUT','/usuario/{id}','UsuarioController@update');
 $route->add('DELETE','/usuario/{id}','UsuarioController@delete');

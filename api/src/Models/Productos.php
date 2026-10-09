@@ -1,6 +1,6 @@
 <?php
 include_once __DIR__ . "/../Config/conexionDB.php";
-class Productos
+class PRODUCTO
 {
     //Mostrar producto
     public static function all()
@@ -25,7 +25,7 @@ class Productos
             }
         $stringCampos=implode(",",$campos);
         //preparamos la consulta
-        $sql="UPDATE producto SET $stringCampos WHERE id=:id";
+        $sql="UPDATE PRODUCTO SET $stringCampos WHERE id=:id";
         $valores[':id']=$id;
         $result=ConexionPDO::execute($sql,$valores,false);
         //$sql = "SELECT * FROM productos";
@@ -46,14 +46,14 @@ class Productos
         $stringParametros=implode(",",$parametros);
         //die($stringCampos);
         //preparamos la consulta
-        $sql="INSERT INTO producto ($stringCampos) VALUES ($stringParametros)";
+        $sql="INSERT INTO PRODUCTO ($stringCampos) VALUES ($stringParametros)";
         $result=ConexionPDO::execute($sql,$valores,true);
         return $result;
     }
     //Eliminar producto
     public static function delete($id)
     {
-        $sql="DELETE FROM producto WHERE id=:id";
+        $sql="DELETE FROM PRODUCTO WHERE id=:id";
         $valores=[
             ":id"=>$id
         ];

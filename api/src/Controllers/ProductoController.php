@@ -3,7 +3,7 @@ require_once "../src/Models/Productos.php";
 class ProductoController{
     public function getAll()
     {
-        $producto=Productos::all();
+        $producto=PRODUCTO::all();
         echo json_encode($producto);
          
     }
@@ -119,7 +119,7 @@ class ProductoController{
             return;
             }
 
-        $producto=Productos::update($id,$data);
+        $producto=PRODUCTO::update($id,$data);
         if($producto){
             echo json_encode([
                 "estado"=>true,
@@ -158,7 +158,7 @@ class ProductoController{
                 return;
             }
 
-        $producto=Productos::add($data);
+        $producto=PRODUCTO::add($data);
 
         if($producto){
             echo json_encode([
@@ -175,7 +175,7 @@ class ProductoController{
     //Eliminar producto
     public function delete($id)
     {
-        $producto=Productos::delete($id);
+        $producto=PRODUCTO::delete($id);
 
         if($producto){
             echo json_encode([

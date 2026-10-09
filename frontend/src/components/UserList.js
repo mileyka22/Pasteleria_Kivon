@@ -1,4 +1,4 @@
-import { api } from "../utils/api.js";
+import { api } from '../utils/api.js';
 
 export const getUserList = async () => {
     const container = document.getElementById('userTableList');

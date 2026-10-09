@@ -3,7 +3,7 @@ GET http://api.pasteleria/productos
 
 ### Modificar productos
 
-PUT http://api.pasteleria/productos/1
+PUT http://api.pasteleria/productos/2
 
 {
     "nombre":"Torta de lima",
