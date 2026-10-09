@@ -1,144 +1,89 @@
 <?php
-
 require_once __DIR__ . "/../Models/Personal.php";
 
 class PersonalController
 {
-    // Consultar todos
-    public static function getAll()
+    public function getAll()
     {
-        $result = Personal::all();
-
-        header('Content-Type: application/json');
-
-        echo json_encode($result);
+        echo json_encode(Personal::all(), JSON_UNESCAPED_UNICODE);
     }
 
-    // Obtener datos JSON
-    private static function getJsonData()
+    private function getData()
     {
-        $json = file_get_contents("php://input");
-
-        $data = json_decode($json, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            header('Content-Type: application/json');
-
-            echo json_encode([
-                "error" => "JSON invalido"
-            ]);
-
-            exit;
-        }
-
-        return $data;
+        $data = json_decode(file_get_contents('php://input'), true);
+        return json_last_error() === JSON_ERROR_NONE && is_array($data)
+            ? [$data, []]
+            : [null, ['json' => 'Debe enviar datos validos en formato JSON']];
     }
 
-    // Validar personal
-    private static function validarPersonal($data)
+    private function validate($data)
     {
-        $errores = [];
+        $allowed = ['Nombre', 'Cargo', 'Telefono', 'Salario', 'id_usuario'];
+        $errors = [];
+        foreach (array_diff(array_keys($data), $allowed) as $field) $errors[$field] = 'Campo no permitido';
 
-        // Nombre
-        if (!isset($data['Nombre']) || trim($data['Nombre']) == "") {
-            $errores['Nombre'] = "El campo Nombre es obligatorio";
-        }
-
-        // Cargo
-        if (!isset($data['Cargo']) || trim($data['Cargo']) == "") {
-            $errores['Cargo'] = "El campo Cargo es obligatorio";
-        }
-
-        // Salario
-        if (!isset($data['Salario']) || trim($data['Salario']) == "") {
-            $errores['Salario'] = "El campo Salario es obligatorio";
-        } elseif (!is_numeric($data['Salario'])) {
-            $errores['Salario'] = "El campo Salario debe ser numerico";
-        }
-
-        // Telefono
-        if (isset($data['Telefono']) && $data['Telefono'] !== "") {
-            if (!is_numeric($data['Telefono'])) {
-                $errores['Telefono'] = "El campo Telefono debe ser numerico";
+        foreach (['Nombre' => 50, 'Cargo' => 100] as $field => $max) {
+            if (!isset($data[$field]) || !is_string($data[$field]) || trim($data[$field]) === '') {
+                $errors[$field] = "El campo $field es obligatorio";
+            } elseif (strlen(trim($data[$field])) > $max) {
+                $errors[$field] = "El campo $field no puede superar $max caracteres";
             }
         }
-
-        // id_usuario
-        if (isset($data['id_usuario']) && $data['id_usuario'] !== "") {
-            if (!is_numeric($data['id_usuario'])) {
-                $errores['id_usuario'] = "El campo id_usuario debe ser numerico";
-            }
+        if (!isset($data['Salario']) || !is_numeric($data['Salario']) || (float) $data['Salario'] < 0) {
+            $errors['Salario'] = 'El salario debe ser un numero mayor o igual a cero';
+        }
+        if (isset($data['Telefono']) && (!is_string($data['Telefono']) || strlen(trim($data['Telefono'])) > 50)) {
+            $errors['Telefono'] = 'El telefono debe ser texto de hasta 50 caracteres';
         }
 
-        return $errores;
-    }
-
-    // Actualizar
-    public static function update($id)
-    {
-        $data = self::getJsonData();
-
-        $errores = self::validarPersonal($data);
-
-        if (!empty($errores)) {
-            header('Content-Type: application/json');
-            http_response_code(400);
-
-            echo json_encode([
-                "errores" => $errores
-            ]);
-
-            return;
+        $userId = $data['id_usuario'] ?? '';
+        if ($userId !== '' && (!ctype_digit((string) $userId) || !Personal::userExists($userId))) {
+            $errors['id_usuario'] = 'Selecciona un usuario existente';
         }
+        if ($errors) return [null, $errors];
 
-        $result = Personal::update($id, $data);
-
-        header('Content-Type: application/json');
-
-        echo json_encode([
-            "mensaje" => "Personal actualizado correctamente",
-            "resultado" => $result
-        ]);
+        return [[
+            'Nombre' => trim($data['Nombre']),
+            'Cargo' => trim($data['Cargo']),
+            'Telefono' => isset($data['Telefono']) && trim($data['Telefono']) !== '' ? trim($data['Telefono']) : null,
+            'Salario' => (float) $data['Salario'],
+            'id_usuario' => $userId === '' ? null : (int) $userId
+        ], []];
     }
 
-    // Agregar
-    public static function add()
+    public function add()
     {
-        $data = self::getJsonData();
+        [$data, $errors] = $this->getData();
+        if ($errors) return $this->respondErrors($errors);
+        [$values, $errors] = $this->validate($data);
+        if ($errors) return $this->respondErrors($errors);
+        echo json_encode(['estado' => (bool) Personal::add($values), 'message' => 'Personal agregado correctamente'], JSON_UNESCAPED_UNICODE);
+    }
 
-        $errores = self::validarPersonal($data);
+    public function update($id)
+    {
+        [$data, $errors] = $this->getData();
+        if ($errors) return $this->respondErrors($errors);
+        [$values, $errors] = $this->validate($data);
+        if ($errors) return $this->respondErrors($errors);
+        if (!Personal::find($id)) return $this->respondErrors(['id' => 'Registro de personal no encontrado'], 404);
+        Personal::update($id, $values);
+        echo json_encode(['estado' => true, 'message' => 'Personal actualizado correctamente'], JSON_UNESCAPED_UNICODE);
+    }
 
-        if (!empty($errores)) {
-            header('Content-Type: application/json');
-            http_response_code(400);
-
-            echo json_encode([
-                "errores" => $errores
-            ]);
-
-            return;
+    public function delete($id)
+    {
+        if (!Personal::find($id)) return $this->respondErrors(['id' => 'Registro de personal no encontrado'], 404);
+        if (Personal::hasRelatedRecords($id)) {
+            return $this->respondErrors(['relacion' => 'No se puede eliminar: el personal esta asociado a productos, pedidos o ventas'], 409);
         }
-
-        $result = Personal::add($data);
-
-        header('Content-Type: application/json');
-
-        echo json_encode([
-            "mensaje" => "Personal adicionado correctamente",
-            "resultado" => $result
-        ]);
+        Personal::delete($id);
+        echo json_encode(['estado' => true, 'message' => 'Personal eliminado correctamente'], JSON_UNESCAPED_UNICODE);
     }
 
-    // Eliminar
-    public static function delete($id)
+    private function respondErrors($errors, $status = 400)
     {
-        $result = Personal::delete($id);
-
-        header('Content-Type: application/json');
-
-        echo json_encode([
-            "mensaje" => "Personal eliminado correctamente",
-            "resultado" => $result
-        ]);
+        http_response_code($status);
+        echo json_encode(['estado' => false, 'errores' => $errors], JSON_UNESCAPED_UNICODE);
     }
 }

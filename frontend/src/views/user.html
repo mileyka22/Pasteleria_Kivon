@@ -1,28 +1,81 @@
-<section class="overflow-hidden rounded-lg border border-pink-200 bg-white shadow-sm">
-    <img class="h-56 w-full object-cover" src="./src/assets/pasteleria-hero.png" alt="Ilustracion de administracion de pasteleria">
-    <div class="p-6">
-    <div class="mb-5">
-        <p class="text-sm font-semibold uppercase tracking-wide text-lime-700">Administracion</p>
-        <h2 class="mt-1 text-2xl font-bold text-pink-900">Listado de usuarios</h2>
-    </div>
 
-    <div class="overflow-hidden rounded-lg border border-pink-100">
-        <table class="w-full border-collapse text-left text-sm">
-            <thead class="bg-pink-100 text-pink-950">
-                <tr>
-                    <th class="px-4 py-3 font-semibold">ID</th>
-                    <th class="px-4 py-3 font-semibold">Nombre</th>
-                    <th class="px-4 py-3 font-semibold">Email</th>
-                </tr>
-            </thead>
-            <tbody id="userTableList" class="divide-y divide-pink-100 bg-white">
-                <tr>
-                    <td class="px-4 py-3">1</td>
-                    <td class="px-4 py-3 font-medium">John Doe</td>
-                    <td class="px-4 py-3 text-slate-600">john.doe@example.com</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+<section class="overflow-hidden rounded-lg border border-pink-200 bg-white shadow-sm">
+    <img class="h-56 w-full object-cover" src="./src/assets/pasteleria-hero.png" alt="Ilustración de administración de pastelería">
+
+    <div class="p-6">
+        <div class="mb-5">
+            <p class="text-sm font-semibold uppercase tracking-wide text-lime-700">Administración</p>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="mt-1 text-2xl font-bold text-pink-900">Listado de usuarios</h2>
+                <button id="openUserModal" type="button" class="rounded-md bg-pink-700 px-4 py-2 font-semibold text-white hover:bg-pink-800">Adicionar usuario</button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border border-pink-100">
+            <table class="w-full min-w-[42rem] border-collapse text-left text-sm">
+                <thead class="bg-pink-100 text-pink-950">
+                    <tr>
+                        <th class="px-4 py-3 font-semibold">N.º</th>
+                        <th class="px-4 py-3 font-semibold">Nombre de usuario</th>
+                        <th class="px-4 py-3 font-semibold">Permiso</th>
+                        <th class="px-4 py-3 text-right font-semibold">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="userTableList" class="divide-y divide-pink-100 bg-white">
+                    <tr>
+                        <td class="px-4 py-3 text-slate-500" colspan="4">
+                            Cargando usuarios...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </section>
+
+<div id="userModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="userModalTitle">
+    <section class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <div class="mb-5 flex items-center justify-between">
+            <h2 id="userModalTitle" class="text-xl font-bold text-pink-900">Adicionar usuario</h2>
+            <button id="closeUserModal" type="button" class="rounded px-2 py-1 text-2xl text-slate-500 hover:bg-slate-100" aria-label="Cerrar">&times;</button>
+        </div>
+        <form id="userForm" class="space-y-4">
+            <label id="userIdGroup" class="hidden block text-sm font-medium text-slate-700">ID
+                <input name="id" readonly class="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-slate-600">
+            </label>
+            <label class="block text-sm font-medium text-slate-700">Nombre de usuario
+                <input name="Username" required maxlength="50" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" autocomplete="username">
+            </label>
+            <label class="block text-sm font-medium text-slate-700">Permiso
+                <select name="Permiso" required class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2">
+                    <option value="">Selecciona un permiso</option>
+                    <option value="Administrador">Administrador</option>
+                    <option value="Ventas">Ventas</option>
+                    <option value="Produccion">Produccion</option>
+                    <option value="Entrega">Entrega</option>
+                </select>
+            </label>
+            <label id="userPasswordGroup" class="block text-sm font-medium text-slate-700">Contraseña
+                <input name="Password" type="password" required minlength="6" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" autocomplete="new-password">
+            </label>
+            <p id="userFormMessage" class="hidden text-sm" role="status"></p>
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="cancelUserModal" type="button" class="rounded-md border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50">Cancelar</button>
+                <button id="saveUser" type="submit" class="rounded-md bg-lime-700 px-4 py-2 font-semibold text-white hover:bg-lime-800">Guardar usuario</button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<div id="deleteUserModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-labelledby="deleteUserTitle">
+    <section class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <h2 id="deleteUserTitle" class="text-xl font-bold text-pink-900">Eliminar usuario</h2>
+        <p class="mt-3 text-slate-700">Confirma que deseas eliminar a <strong id="deleteUserName"></strong> (ID <span id="deleteUserId"></span>).</p>
+        <p id="deleteUserMessage" class="mt-3 hidden text-sm" role="status"></p>
+        <div class="mt-6 flex justify-end gap-2">
+            <button id="cancelDeleteUser" type="button" class="rounded-md border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50">Cancelar</button>
+            <button id="confirmDeleteUser" type="button" class="rounded-md bg-pink-700 px-4 py-2 font-semibold text-white hover:bg-pink-800">Eliminar</button>
+        </div>
+    </section>
+</div>

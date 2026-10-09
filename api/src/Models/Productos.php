@@ -1,63 +1,67 @@
 <?php
 include_once __DIR__ . "/../Config/conexionDB.php";
+
 class PRODUCTO
 {
-    //Mostrar producto
     public static function all()
     {
-        $sql = "SELECT * FROM PRODUCTO";
-        return ConexionPDO::query($sql); 
+        return ConexionPDO::query("SELECT * FROM PRODUCTO ORDER BY id");
     }
-    //Actualizar producto
-        public static function update($id,$data)
+
+    public static function find($id)
     {
-        if(isset($data['id']))
-            {
-                unset($data['id']);
-            }
-            $campos=[];
-            $valores=[];
-            //construir datos
-            foreach($data as $columna=>$valor)
-            {
-                $campos[]="$columna=:$columna";
-                $valores[":$columna"]=$valor;
-            }
-        $stringCampos=implode(",",$campos);
-        //preparamos la consulta
-        $sql="UPDATE PRODUCTO SET $stringCampos WHERE id=:id";
-        $valores[':id']=$id;
-        $result=ConexionPDO::execute($sql,$valores,false);
-        //$sql = "SELECT * FROM productos";
-        return $result; //ConexionPDO::query($sql); 
+        $rows = ConexionPDO::query("SELECT * FROM PRODUCTO WHERE id = :id", [':id' => $id]);
+        return $rows[0] ?? null;
     }
-    public static function add($data){
-        $campos=[];
-        $parametros=[];
-        $valores=[];
-            //construir datos
-        foreach($data as $columna=>$valor)
-        {
-            $campos[]=$columna;
-            $parametros[]=":$columna";
-            $valores[":$columna"]=$valor;
-        }
-        $stringCampos=implode(",",$campos);
-        $stringParametros=implode(",",$parametros);
-        //die($stringCampos);
-        //preparamos la consulta
-        $sql="INSERT INTO PRODUCTO ($stringCampos) VALUES ($stringParametros)";
-        $result=ConexionPDO::execute($sql,$valores,true);
-        return $result;
+
+    public static function personalExists($id)
+    {
+        return (bool) ConexionPDO::query("SELECT id FROM PERSONAL WHERE id = :id", [':id' => $id]);
     }
-    //Eliminar producto
+
+    public static function hasOrderItems($id)
+    {
+        return (bool) ConexionPDO::query(
+            "SELECT id FROM PRODUCTO_PEDIDO WHERE id_producto = :id LIMIT 1",
+            [':id' => $id]
+        );
+    }
+
+    public static function add($data)
+    {
+        $sql = "INSERT INTO PRODUCTO (Nombre, Precio, Cantidad, Ingrediente, id_personal)
+                VALUES (:Nombre, :Precio, :Cantidad, :Ingrediente, :id_personal)";
+        $values = [
+            ':Nombre' => $data['Nombre'],
+            ':Precio' => $data['Precio'],
+            ':Cantidad' => $data['Cantidad'],
+            ':Ingrediente' => $data['Ingrediente'],
+            ':id_personal' => $data['id_personal']
+        ];
+        return ConexionPDO::execute($sql, $values, true);
+    }
+
+    public static function update($id, $data)
+    {
+        $sql = "UPDATE PRODUCTO
+                SET Nombre = :Nombre, Precio = :Precio, Cantidad = :Cantidad,
+                    Ingrediente = :Ingrediente, id_personal = :id_personal
+                WHERE id = :id";
+        $values = [
+            ':Nombre' => $data['Nombre'],
+            ':Precio' => $data['Precio'],
+            ':Cantidad' => $data['Cantidad'],
+            ':Ingrediente' => $data['Ingrediente'],
+            ':id_personal' => $data['id_personal'],
+            ':id' => $id
+        ];
+        return ConexionPDO::execute($sql, $values);
+    }
+
     public static function delete($id)
     {
-        $sql="DELETE FROM PRODUCTO WHERE id=:id";
-        $valores=[
-            ":id"=>$id
-        ];
-        $result=ConexionPDO::execute($sql,$valores,false);
-        return $result;
+        $stmt = ConexionPDO::connect()->prepare("DELETE FROM PRODUCTO WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
     }
 }

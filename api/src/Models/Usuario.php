@@ -11,6 +11,13 @@ class Usuario
         return ConexionPDO::query($sql);
     }
 
+    public static function find($id)
+    {
+        $sql = "SELECT id, Username, Permiso FROM USUARIO WHERE id = :id";
+        $usuarios = ConexionPDO::query($sql, [':id' => $id]);
+        return $usuarios[0] ?? null;
+    }
+
     public static function add($data)
     {
         $campos = [];
@@ -34,37 +41,23 @@ class Usuario
 
     public static function update($id, $data)
     {
-        if (isset($data['id'])) {
-            unset($data['id']);
-        }
-
-        $campos = [];
-        $valores = [];
-
-        foreach ($data as $columna => $valor) {
-            $campos[] = "$columna=:$columna";
-            $valores[":$columna"] = $valor;
-        }
-
-        $stringCampos = implode(",", $campos);
-
         $sql = "UPDATE USUARIO
-                SET $stringCampos
-                WHERE id=:id";
+                SET Username = :Username, Permiso = :Permiso
+                WHERE id = :id";
 
-        $valores[':id'] = $id;
+        $valores = [
+            ':Username' => $data['Username'],
+            ':Permiso' => $data['Permiso'],
+            ':id' => $id
+        ];
 
         return ConexionPDO::execute($sql, $valores, false);
     }
 
     public static function delete($id)
     {
-        $sql = "DELETE FROM USUARIO WHERE id=:id";
-
-        $valores = [
-            ":id" => $id
-        ];
-
-        return ConexionPDO::execute($sql, $valores, false);
+        $stmt = ConexionPDO::connect()->prepare("DELETE FROM USUARIO WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
     }
 }

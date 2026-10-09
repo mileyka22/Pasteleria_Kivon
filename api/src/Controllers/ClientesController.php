@@ -1,146 +1,84 @@
 <?php
-
 require_once "../src/Models/Clientes.php";
 
 class ClientesController
 {
     public function getAll()
     {
-        $clientes = Clientes::all();
-        echo json_encode($clientes);
+        echo json_encode(Clientes::all(), JSON_UNESCAPED_UNICODE);
     }
 
-    private function getJsonData()
+    private function getData()
     {
-        $jsonData = file_get_contents('php://input');
-        $data = json_decode($jsonData, true);
-
-        if (json_last_error() != JSON_ERROR_NONE) {
-            return [
-                "data" => null,
-                "errores" => [
-                    "json" => json_last_error_msg()
-                ]
-            ];
-        }
-
-        if (!is_array($data)) {
-            return [
-                "data" => null,
-                "errores" => [
-                    "json" => "Debe enviar datos en formato JSON"
-                ]
-            ];
-        }
-
-        return [
-            "data" => $data,
-            "errores" => []
-        ];
+        $data = json_decode(file_get_contents('php://input'), true);
+        return json_last_error() === JSON_ERROR_NONE && is_array($data)
+            ? [$data, []]
+            : [null, ['json' => 'Debe enviar datos validos en formato JSON']];
     }
 
-    private function validarCliente($data)
+    private function validate($data)
     {
-        $errores = [];
+        $allowed = ['Nombre', 'Apellidos', 'CI', 'Telefono', 'Direccion'];
+        $errors = [];
+        foreach (array_diff(array_keys($data), $allowed) as $field) $errors[$field] = 'Campo no permitido';
 
-        if (!isset($data['Nombre']) || trim($data['Nombre']) == "") {
-            $errores['Nombre'] = "El campo Nombre es obligatorio";
+        foreach (['Nombre' => 50, 'CI' => 30] as $field => $max) {
+            if (!isset($data[$field]) || !is_string($data[$field]) || trim($data[$field]) === '') {
+                $errors[$field] = "El campo $field es obligatorio";
+            } elseif (strlen(trim($data[$field])) > $max) {
+                $errors[$field] = "El campo $field no puede superar $max caracteres";
+            }
         }
-
-        if (!isset($data['CI']) || trim($data['CI']) == "") {
-            $errores['CI'] = "El campo CI es obligatorio";
+        foreach (['Apellidos' => 100, 'Telefono' => 20, 'Direccion' => 250] as $field => $max) {
+            if (isset($data[$field]) && !is_string($data[$field])) {
+                $errors[$field] = "El campo $field debe ser texto";
+            } elseif (isset($data[$field]) && strlen(trim($data[$field])) > $max) {
+                $errors[$field] = "El campo $field no puede superar $max caracteres";
+            }
         }
+        if ($errors) return [null, $errors];
 
-        return $errores;
+        $values = [];
+        foreach ($allowed as $field) {
+            $value = isset($data[$field]) ? trim($data[$field]) : '';
+            $values[$field] = $value === '' ? null : $value;
+        }
+        return [$values, []];
     }
 
-    // Agregar
     public function add()
     {
-        $json = $this->getJsonData();
-
-        if (!empty($json['errores'])) {
-            echo json_encode([
-                "estado" => false,
-                "errores" => $json['errores']
-            ]);
-            return;
-        }
-
-        $data = $json['data'];
-        $errores = $this->validarCliente($data);
-
-        if (!empty($errores)) {
-            echo json_encode([
-                "estado" => false,
-                "errores" => $errores
-            ]);
-            return;
-        }
-
-        $cliente = Clientes::add($data);
-
-        if ($cliente) {
-            echo json_encode([
-                "estado" => true,
-                "message" => "Cliente agregado correctamente"
-            ]);
-            return;
-        }
-
-        echo json_encode($cliente);
+        [$data, $errors] = $this->getData();
+        if ($errors) return $this->respondErrors($errors);
+        [$values, $errors] = $this->validate($data);
+        if ($errors) return $this->respondErrors($errors);
+        echo json_encode(['estado' => (bool) Clientes::add($values), 'message' => 'Cliente agregado correctamente'], JSON_UNESCAPED_UNICODE);
     }
 
-    // Actualizar
     public function update($id)
     {
-        $json = $this->getJsonData();
-
-        if (!empty($json['errores'])) {
-            echo json_encode([
-                "estado" => false,
-                "errores" => $json['errores']
-            ]);
-            return;
-        }
-
-        $data = $json['data'];
-        $errores = $this->validarCliente($data);
-
-        if (!empty($errores)) {
-            echo json_encode([
-                "estado" => false,
-                "errores" => $errores
-            ]);
-            return;
-        }
-
-        $cliente = Clientes::update($id, $data);
-
-        if ($cliente) {
-            echo json_encode([
-                "estado" => true,
-                "message" => "Cliente actualizado correctamente"
-            ]);
-            return;
-        }
-
-        echo json_encode($cliente);
+        [$data, $errors] = $this->getData();
+        if ($errors) return $this->respondErrors($errors);
+        [$values, $errors] = $this->validate($data);
+        if ($errors) return $this->respondErrors($errors);
+        if (!Clientes::find($id)) return $this->respondErrors(['id' => 'Cliente no encontrado'], 404);
+        Clientes::update($id, $values);
+        echo json_encode(['estado' => true, 'message' => 'Cliente actualizado correctamente'], JSON_UNESCAPED_UNICODE);
     }
 
-    // Eliminar
     public function delete($id)
     {
-        $cliente = Clientes::delete($id);
-
-        if ($cliente) {
-            echo json_encode([
-                "estado" => true,
-                "message" => "Cliente eliminado correctamente"
-            ]);
-            return;
+        if (!Clientes::find($id)) return $this->respondErrors(['id' => 'Cliente no encontrado'], 404);
+        if (Clientes::hasOrders($id)) {
+            return $this->respondErrors(['relacion' => 'No se puede eliminar: el cliente tiene pedidos asociados'], 409);
         }
+        Clientes::delete($id);
+        echo json_encode(['estado' => true, 'message' => 'Cliente eliminado correctamente'], JSON_UNESCAPED_UNICODE);
+    }
 
-        echo json_encode($cliente);
+    private function respondErrors($errors, $status = 400)
+    {
+        http_response_code($status);
+        echo json_encode(['estado' => false, 'errores' => $errors], JSON_UNESCAPED_UNICODE);
     }
 }

@@ -14,36 +14,28 @@ class ConexionPDO
         try {
             self::$cnn = new PDO($pdo, USERNAME, PASSWORD, $options);
         } catch (PDOException $error) {
-            die("ERROR " . $error->getMessage());
+            throw new RuntimeException("No se pudo conectar con la base de datos", 0, $error);
         }
         return self::$cnn;
     }
     //funcion que ejecute una consulta
     public static function query(string $sql, array $param=[]): array
     {
-        try {
-            $stmt=self::connect()->prepare($sql);
-            $stmt->execute($param);
-            return $stmt->fetchAll(); //["ok" => $sql];
-        } catch (Exception $e) {
-            return ["error" => $e->getMessage()];
-        }
+        $stmt = self::connect()->prepare($sql);
+        $stmt->execute($param);
+        return $stmt->fetchAll();
     }
 
     //Funcion para ejecutar upsate o add
     
     public static function execute($sql, array $param = [], $id = false)
     {
-        try {
-            $db = self::connect();
-            $stmt = $db->prepare($sql);
-            $res = $stmt->execute($param);
-            if ($id == true) {
-                return $db->lastInsertId();
-            }
-            return $res;
-        } catch (Exception $e) {
-        die("Existe error al procesar datos" . $e->getMessage());
+        $db = self::connect();
+        $stmt = $db->prepare($sql);
+        $res = $stmt->execute($param);
+        if ($id == true) {
+            return $db->lastInsertId();
         }
+        return $res;
     }
 }

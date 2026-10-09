@@ -1,76 +1,69 @@
 <?php
-
 include_once __DIR__ . "/../Config/conexionDB.php";
 
 class Personal
 {
-    // Mostrar personal
     public static function all()
     {
-        $sql = "SELECT * FROM PERSONAL";
-        return ConexionPDO::query($sql);
+        return ConexionPDO::query("SELECT * FROM PERSONAL ORDER BY id");
     }
 
-    // Agregar personal
+    public static function find($id)
+    {
+        $rows = ConexionPDO::query("SELECT * FROM PERSONAL WHERE id = :id", [':id' => $id]);
+        return $rows[0] ?? null;
+    }
+
+    public static function userExists($id)
+    {
+        return (bool) ConexionPDO::query("SELECT id FROM USUARIO WHERE id = :id", [':id' => $id]);
+    }
+
+    public static function hasRelatedRecords($id)
+    {
+        $rows = ConexionPDO::query(
+            "SELECT
+                (SELECT COUNT(*) FROM PRODUCTO WHERE id_personal = :producto) +
+                (SELECT COUNT(*) FROM PEDIDO WHERE id_personal = :pedido) +
+                (SELECT COUNT(*) FROM VENTA WHERE id_personal = :venta) AS total",
+            [':producto' => $id, ':pedido' => $id, ':venta' => $id]
+        );
+        return (int) ($rows[0]['total'] ?? 0) > 0;
+    }
+
     public static function add($data)
     {
-        $campos = [];
-        $parametros = [];
-        $valores = [];
-
-        foreach ($data as $columna => $valor) {
-            $campos[] = $columna;
-            $parametros[] = ":$columna";
-            $valores[":$columna"] = $valor;
-        }
-
-        $stringCampos = implode(",", $campos);
-        $stringParametros = implode(",", $parametros);
-
-        $sql = "INSERT INTO PERSONAL ($stringCampos) VALUES ($stringParametros)";
-
-        $result = ConexionPDO::execute($sql, $valores, true);
-
-        return $result;
+        $sql = "INSERT INTO PERSONAL (Nombre, Cargo, Telefono, Salario, id_usuario)
+                VALUES (:Nombre, :Cargo, :Telefono, :Salario, :id_usuario)";
+        return ConexionPDO::execute($sql, self::values($data), true);
     }
 
-    // Actualizar personal
     public static function update($id, $data)
     {
-        if (isset($data['id'])) {
-            unset($data['id']);
-        }
-
-        $campos = [];
-        $valores = [];
-
-        foreach ($data as $columna => $valor) {
-            $campos[] = "$columna=:$columna";
-            $valores[":$columna"] = $valor;
-        }
-
-        $stringCampos = implode(",", $campos);
-
-        $sql = "UPDATE PERSONAL SET $stringCampos WHERE id=:id";
-
-        $valores[':id'] = $id;
-
-        $result = ConexionPDO::execute($sql, $valores, false);
-
-        return $result;
+        $sql = "UPDATE PERSONAL
+                SET Nombre = :Nombre, Cargo = :Cargo, Telefono = :Telefono,
+                    Salario = :Salario, id_usuario = :id_usuario
+                WHERE id = :id";
+        $values = self::values($data);
+        $values[':id'] = $id;
+        return ConexionPDO::execute($sql, $values);
     }
 
-    // Eliminar personal
+    private static function values($data)
+    {
+        return [
+            ':Nombre' => $data['Nombre'],
+            ':Cargo' => $data['Cargo'],
+            ':Telefono' => $data['Telefono'],
+            ':Salario' => $data['Salario'],
+            ':id_usuario' => $data['id_usuario']
+        ];
+    }
+
     public static function delete($id)
     {
-        $sql = "DELETE FROM PERSONAL WHERE id=:id";
-
-        $valores = [
-            ":id" => $id
-        ];
-
-        $result = ConexionPDO::execute($sql, $valores, false);
-
-        return $result;
+        $stmt = ConexionPDO::connect()->prepare("DELETE FROM PERSONAL WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        return $stmt->rowCount() > 0;
     }
 }

@@ -6,11 +6,10 @@ GET http://api.pasteleria/productos
 PUT http://api.pasteleria/productos/2
 
 {
-    "nombre":"Torta de lima",
-    "precio":122.00,
-    "cantidad":5,
-    "ingrediente":"Lima, leche, azucar",
-    "fecha_registro":"2026-06-12",
+    "Nombre":"Torta de lima",
+    "Precio":122.00,
+    "Cantidad":5,
+    "Ingrediente":"Lima, leche, azucar",
     "id_personal":1
 }
 
@@ -22,10 +21,9 @@ DELETE http://api.pasteleria/productos/6
 POST http://api.pasteleria/productos
 
 {
-    "nombre":"Torta de lima",
-    "precio":122.00,
-    "cantidad":5,
-    "ingrediente":"Lima, leche, azucar",
-    "fecha_registro":"2026-06-12",
+    "Nombre":"Torta de lima",
+    "Precio":122.00,
+    "Cantidad":5,
+    "Ingrediente":"Lima, leche, azucar",
     "id_personal":1
 }

@@ -1,190 +1,98 @@
 <?php
 require_once "../src/Models/Productos.php";
-class ProductoController{
+
+class ProductoController
+{
     public function getAll()
     {
-        $producto=PRODUCTO::all();
-        echo json_encode($producto);
-         
+        echo json_encode(PRODUCTO::all(), JSON_UNESCAPED_UNICODE);
     }
 
     private function getJsonData()
     {
-        $jsonData=file_get_contents('php://input');
-        $data= json_decode($jsonData,true);
-
-        if(json_last_error()!=JSON_ERROR_NONE)
-            {
-                return [
-                    "data"=>null,
-                    "errores"=>[
-                        "json"=>json_last_error_msg()
-                    ]
-                ];
-            }
-
-        if(!is_array($data))
-            {
-                return [
-                    "data"=>null,
-                    "errores"=>[
-                        "json"=>"Debe enviar datos en formato JSON"
-                    ]
-                ];
-            }
-
-        return [
-            "data"=>$data,
-            "errores"=>[]
-        ];
-    }
-
-    private function validarProducto($data)
-    {
-        $errores=[];
-
-        if(!isset($data['nombre']) || trim($data['nombre'])=="")
-            {
-                $errores['nombre']="El campo nombre es obligatorio";
-            }
-
-        if(!isset($data['precio']) || trim($data['precio'])=="")
-            {
-                $errores['precio']="El campo precio es obligatorio";
-            }
-        elseif(!is_numeric($data['precio']))
-            {
-                $errores['precio']="El campo precio debe ser numerico";
-            }
-
-        if(!isset($data['cantidad']) || trim($data['cantidad'])=="")
-            {
-                $errores['cantidad']="El campo cantidad es obligatorio";
-            }
-        elseif(!is_numeric($data['cantidad']))
-            {
-                $errores['cantidad']="El campo cantidad debe ser numerico";
-            }
-
-        if(!isset($data['ingrediente']) || trim($data['ingrediente'])=="")
-            {
-                $errores['ingrediente']="El campo ingrediente es obligatorio";
-            }
-
-        if(!isset($data['fecha_registro']) || trim($data['fecha_registro'])=="")
-            {
-                $errores['fecha_registro']="El campo fecha_registro es obligatorio";
-            }
-        elseif(!strtotime($data['fecha_registro']))
-            {
-                $errores['fecha_registro']="El campo fecha_registro debe ser una fecha valida";
-            }
-
-        if(!isset($data['id_personal']) || trim($data['id_personal'])=="")
-            {
-                $errores['id_personal']="El campo id_personal es obligatorio";
-            }
-        elseif(!is_numeric($data['id_personal']))
-            {
-                $errores['id_personal']="El campo id_personal debe ser numerico";
-            }
-
-        return $errores;
-    }
-
-    //actualizar producto
-    public function update($id)
-    {
-        $json=$this->getJsonData();
-
-        if(!empty($json['errores']))
-            {
-                echo json_encode([
-                    "estado"=>false,
-                    "errores"=>$json['errores']
-                ]);
-                return;
-            }
-
-        $data=$json['data'];
-        $errores=$this->validarProducto($data);
-
-        if(!empty($errores))
-            {
-            echo json_encode(
-                [
-                    "estado"=>false,
-                    "errores"=>$errores
-                ]);
-            return;
-            }
-
-        $producto=PRODUCTO::update($id,$data);
-        if($producto){
-            echo json_encode([
-                "estado"=>true,
-                "message"=>"Producto actualizado correctamente",
-            ]);
-            return;
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            return [null, ['json' => 'Debe enviar datos validos en formato JSON']];
         }
-        echo json_encode($producto);
-        
+        return [$data, []];
     }
 
-    //Adicionar producto
+    private function normalizeAndValidate($data)
+    {
+        $errors = [];
+        $allowed = ['Nombre', 'Precio', 'Cantidad', 'Ingrediente', 'id_personal'];
+        foreach (array_diff(array_keys($data), $allowed) as $field) {
+            $errors[$field] = 'Campo no permitido';
+        }
+
+        if (!isset($data['Nombre']) || !is_string($data['Nombre']) || trim($data['Nombre']) === '') {
+            $errors['Nombre'] = 'El nombre es obligatorio';
+        } elseif (strlen(trim($data['Nombre'])) > 80) {
+            $errors['Nombre'] = 'El nombre no puede superar 80 caracteres';
+        }
+
+        if (!isset($data['Precio']) || !is_numeric($data['Precio']) || (float) $data['Precio'] < 0) {
+            $errors['Precio'] = 'El precio debe ser un numero mayor o igual a cero';
+        }
+        if (!isset($data['Cantidad']) || filter_var($data['Cantidad'], FILTER_VALIDATE_INT) === false || (int) $data['Cantidad'] < 0) {
+            $errors['Cantidad'] = 'La cantidad debe ser un entero mayor o igual a cero';
+        }
+        if (isset($data['Ingrediente']) && !is_string($data['Ingrediente'])) {
+            $errors['Ingrediente'] = 'El ingrediente debe ser texto';
+        } elseif (isset($data['Ingrediente']) && strlen($data['Ingrediente']) > 255) {
+            $errors['Ingrediente'] = 'El ingrediente no puede superar 255 caracteres';
+        }
+
+        $personalId = $data['id_personal'] ?? '';
+        if ($personalId !== '' && (!ctype_digit((string) $personalId) || !PRODUCTO::personalExists($personalId))) {
+            $errors['id_personal'] = 'Selecciona un registro de personal existente';
+        }
+
+        if ($errors) return [null, $errors];
+        return [[
+            'Nombre' => trim($data['Nombre']),
+            'Precio' => (float) $data['Precio'],
+            'Cantidad' => (int) $data['Cantidad'],
+            'Ingrediente' => isset($data['Ingrediente']) && trim($data['Ingrediente']) !== '' ? trim($data['Ingrediente']) : null,
+            'id_personal' => $personalId === '' ? null : (int) $personalId
+        ], []];
+    }
+
     public function add()
     {
-        $json=$this->getJsonData();
+        [$data, $jsonErrors] = $this->getJsonData();
+        if ($jsonErrors) return $this->respondErrors($jsonErrors);
+        [$values, $errors] = $this->normalizeAndValidate($data);
+        if ($errors) return $this->respondErrors($errors);
 
-        if(!empty($json['errores']))
-            {
-                echo json_encode([
-                    "estado"=>false,
-                    "errores"=>$json['errores']
-                ]);
-                return;
-            }
-
-        $data=$json['data'];
-        $errores=$this->validarProducto($data);
-
-        if(!empty($errores))
-            {
-                echo json_encode(
-                [
-                    "estado"=>false,
-                    "errores"=>$errores
-                ]);
-                return;
-            }
-
-        $producto=PRODUCTO::add($data);
-
-        if($producto){
-            echo json_encode([
-                "estado"=>true,
-                "message"=>"Producto adicionado correctamente",
-            ]);
-            return;
-        }
-        
-        echo json_encode($producto);
-         
+        echo json_encode(['estado' => (bool) PRODUCTO::add($values), 'message' => 'Producto agregado correctamente'], JSON_UNESCAPED_UNICODE);
     }
 
-    //Eliminar producto
+    public function update($id)
+    {
+        [$data, $jsonErrors] = $this->getJsonData();
+        if ($jsonErrors) return $this->respondErrors($jsonErrors);
+        [$values, $errors] = $this->normalizeAndValidate($data);
+        if ($errors) return $this->respondErrors($errors);
+        if (!PRODUCTO::find($id)) return $this->respondErrors(['id' => 'Producto no encontrado'], 404);
+
+        PRODUCTO::update($id, $values);
+        echo json_encode(['estado' => true, 'message' => 'Producto actualizado correctamente'], JSON_UNESCAPED_UNICODE);
+    }
+
     public function delete($id)
     {
-        $producto=PRODUCTO::delete($id);
-
-        if($producto){
-            echo json_encode([
-                "estado"=>true,
-                "message"=>"Producto eliminado correctamente",
-            ]);
-            return;
+        if (!PRODUCTO::find($id)) return $this->respondErrors(['id' => 'Producto no encontrado'], 404);
+        if (PRODUCTO::hasOrderItems($id)) {
+            return $this->respondErrors(['relacion' => 'No se puede eliminar: el producto aparece en pedidos existentes'], 409);
         }
+        PRODUCTO::delete($id);
+        echo json_encode(['estado' => true, 'message' => 'Producto eliminado correctamente'], JSON_UNESCAPED_UNICODE);
+    }
 
-        echo json_encode($producto);
+    private function respondErrors($errors, $status = 400)
+    {
+        http_response_code($status);
+        echo json_encode(['estado' => false, 'errores' => $errors], JSON_UNESCAPED_UNICODE);
     }
 }

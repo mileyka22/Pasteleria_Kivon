@@ -10,7 +10,7 @@ POST http://api.pasteleria/usuario
 {
     "Username": "usuario_prueba",
     "Permiso": "Administrador",
-    "Password_hash": "123456"
+    "Password": "123456"
 }
 
 

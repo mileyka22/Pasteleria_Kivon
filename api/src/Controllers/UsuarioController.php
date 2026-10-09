@@ -11,6 +11,18 @@ class UsuarioController
         echo json_encode($usuario);
     }
 
+    public function getById($id)
+    {
+        $usuario = Usuario::find($id);
+        if (!$usuario) {
+            http_response_code(404);
+            echo json_encode(["error" => "Usuario no encontrado"]);
+            return;
+        }
+
+        echo json_encode($usuario);
+    }
+
     private function getJsonData()
     {
         $jsonData = file_get_contents('php://input');
@@ -40,20 +52,37 @@ class UsuarioController
         ];
     }
 
-    private function validarUsuario($data)
+    private function validarUsuario($data, $esNuevo = false)
     {
         $errores = [];
 
-        if (!isset($data['Username']) || trim($data['Username']) == "") {
+        $camposPermitidos = $esNuevo
+            ? ['Username', 'Permiso', 'Password']
+            : ['Username', 'Permiso'];
+        foreach (array_keys($data) as $campo) {
+            if (!in_array($campo, $camposPermitidos, true)) {
+                $errores[$campo] = "El campo no se puede modificar";
+            }
+        }
+
+        if (!isset($data['Username']) || !is_string($data['Username']) || trim($data['Username']) === "") {
             $errores['Username'] = "El campo Username es obligatorio";
+        } elseif (strlen(trim($data['Username'])) > 50) {
+            $errores['Username'] = "Username no puede superar 50 caracteres";
         }
 
-        if (!isset($data['Permiso']) || trim($data['Permiso']) == "") {
+        if (!isset($data['Permiso']) || !is_string($data['Permiso']) || trim($data['Permiso']) === "") {
             $errores['Permiso'] = "El campo Permiso es obligatorio";
+        } elseif (strlen(trim($data['Permiso'])) > 100) {
+            $errores['Permiso'] = "Permiso no puede superar 100 caracteres";
         }
 
-        if (!isset($data['Password_hash']) || trim($data['Password_hash']) == "") {
-            $errores['Password_hash'] = "El campo Password_hash es obligatorio";
+        if ($esNuevo) {
+            if (!isset($data['Password']) || !is_string($data['Password']) || trim($data['Password']) === "") {
+                $errores['Password'] = "El campo contraseña es obligatorio";
+            } elseif (strlen($data['Password']) < 6) {
+                $errores['Password'] = "La contraseña debe tener al menos 6 caracteres";
+            }
         }
 
         return $errores;
@@ -72,7 +101,7 @@ class UsuarioController
         }
 
         $data = $json['data'];
-        $errores = $this->validarUsuario($data);
+        $errores = $this->validarUsuario($data, true);
 
         if (!empty($errores)) {
             echo json_encode([
@@ -82,6 +111,10 @@ class UsuarioController
             return;
         }
 
+        $data['Username'] = trim($data['Username']);
+        $data['Permiso'] = trim($data['Permiso']);
+        $data['Password_hash'] = password_hash($data['Password'], PASSWORD_DEFAULT);
+        unset($data['Password']);
         $usuario = Usuario::add($data);
 
         if ($usuario) {
@@ -118,6 +151,18 @@ class UsuarioController
             return;
         }
 
+        if (!Usuario::find($id)) {
+            http_response_code(404);
+            echo json_encode([
+                "estado" => false,
+                "error" => "Usuario no encontrado"
+            ]);
+            return;
+        }
+
+        $data['Username'] = trim($data['Username']);
+        $data['Permiso'] = trim($data['Permiso']);
+
         $usuario = Usuario::update($id, $data);
 
         if ($usuario) {
@@ -143,6 +188,10 @@ class UsuarioController
             return;
         }
 
-        echo json_encode($usuario);
+        http_response_code(404);
+        echo json_encode([
+            "estado" => false,
+            "error" => "Usuario no encontrado"
+        ]);
     }
 }
