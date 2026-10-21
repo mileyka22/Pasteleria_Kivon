@@ -13,7 +13,7 @@ const staffField = {
 export const crudModules = {
     productos: {
         rootId: 'productosModule', endpoint: 'productos', singular: 'producto', title: 'Productos', primaryField: 'Nombre', layout: 'cards',
-        image: './src/assets/productos-pasteles.png',
+        image: './src/assets/productos-pasteles.png', imageUpload: true,
         fields: [
             { name: 'Nombre', label: 'Nombre', required: true, maxLength: 80 },
             { name: 'Precio', label: 'Precio (Bs)', type: 'number', required: true, min: 0, step: '0.01' },
@@ -75,7 +75,7 @@ export const crudModules = {
         ]
     },
     ventas: {
-        rootId: 'ventasModule', endpoint: 'venta', singular: 'venta', title: 'Ventas', primaryField: 'Metodo_de_pago',
+        rootId: 'ventasModule', endpoint: 'venta', singular: 'venta', title: 'Ventas', primaryField: 'Metodo_de_pago', loadListBeforeOptions: true,
         columns: [
             { name: 'Fecha', label: 'Fecha' }, { name: 'Total', label: 'Total (Bs)', format: 'currency' },
             { name: 'Metodo_de_pago', label: 'Metodo de pago' }, { ...staffField, label: 'Personal' },

@@ -1,4 +1,4 @@
-import { api } from '../utils/api.js';
+import { api, assetUrl } from '../utils/api.js';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -29,6 +29,7 @@ export const setupCrudModule = async (rootId, config) => {
                 <form data-record-form class="space-y-4">
                     <label data-id-group class="hidden block text-sm font-medium text-slate-700">ID del registro<input name="recordId" readonly class="mt-1 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-slate-600"></label>
                     <div class="grid gap-4 sm:grid-cols-2">${config.fields.map(renderField).join('')}</div>
+                    ${config.imageUpload ? `<div class="space-y-2"><span class="block text-sm font-medium text-slate-700">Fotografía del producto</span><div class="relative flex aspect-[4/3] max-h-64 items-center justify-center overflow-hidden rounded-md border border-dashed border-pink-300 bg-pink-50"><div data-image-placeholder class="text-center text-pink-800"><svg aria-hidden="true" class="mx-auto h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span class="mt-2 block text-sm">Agregar imagen</span></div><img data-image-preview alt="Vista previa del producto" class="hidden h-full w-full object-cover"></div><input data-image-input name="imagen" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="sr-only"><button type="button" data-image-select class="rounded-md border border-pink-300 bg-white px-3 py-2 text-sm font-semibold text-pink-900 hover:bg-pink-50">Seleccionar imagen</button><p data-image-message class="hidden text-sm" role="status"></p></div>` : ''}
                     <p data-form-message class="hidden text-sm" role="status"></p>
                     <div class="flex justify-end gap-2 pt-2"><button type="button" data-close-form class="rounded-md border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50">Cancelar</button><button type="submit" data-save-record class="rounded-md bg-lime-700 px-4 py-2 font-semibold text-white hover:bg-lime-800">Guardar</button></div>
                 </form>
@@ -42,6 +43,10 @@ export const setupCrudModule = async (rootId, config) => {
     const deleteModal = document.getElementById(deleteModalId);
     const form = root.querySelector('[data-record-form]');
     const formMessage = root.querySelector('[data-form-message]');
+    const imageInput = config.imageUpload ? root.querySelector('[data-image-input]') : null;
+    const imagePreview = config.imageUpload ? root.querySelector('[data-image-preview]') : null;
+    const imagePlaceholder = config.imageUpload ? root.querySelector('[data-image-placeholder]') : null;
+    let previewUrl = null;
     const deleteMessage = root.querySelector('[data-delete-message]');
     const list = document.getElementById(listId);
     const message = root.querySelector('[data-module-message]');
@@ -55,9 +60,10 @@ export const setupCrudModule = async (rootId, config) => {
         message.textContent = text;
         message.className = `mb-4 rounded-md px-3 py-2 text-sm ${kind === 'error' ? 'bg-pink-100 text-pink-900' : 'bg-lime-100 text-lime-900'}`;
     };
-    const closeForm = () => { hide(modal); form.reset(); form.dataset.mode = 'create'; formMessage.classList.add('hidden'); };
+    const closeForm = () => { hide(modal); form.reset(); form.dataset.mode = 'create'; formMessage.classList.add('hidden'); if (previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null; };
     const closeDelete = () => { hide(deleteModal); deleteMessage.classList.add('hidden'); selectedForDelete = null; };
 
+    const loadOptions = async () => {
     for (const field of config.fields) {
         if (field.endpoint) {
             try {
@@ -71,6 +77,8 @@ export const setupCrudModule = async (rootId, config) => {
             }
         }
     }
+    };
+    if (!config.loadListBeforeOptions) await loadOptions();
 
     const display = (field, record) => {
         const value = record[field.name];
@@ -94,7 +102,7 @@ export const setupCrudModule = async (rootId, config) => {
         if (config.layout === 'cards') {
             list.innerHTML = `<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">${records.map((record, index) => `
                 <article class="flex min-w-0 flex-col overflow-hidden rounded-lg border border-pink-200 bg-white shadow-sm">
-                    <div class="relative aspect-square bg-pink-50"><img src="${escapeHtml(config.image)}" alt="Imagen de reemplazo para ${escapeHtml(record.Nombre)}" class="h-full w-full object-cover"><span class="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-pink-900">${index + 1}</span></div>
+                    <div class="relative aspect-square bg-pink-50">${config.imageUpload && record.Imagen ? `<img src="${escapeHtml(assetUrl(record.Imagen))}" alt="Fotografía de ${escapeHtml(record.Nombre)}" class="h-full w-full object-cover">` : `<img src="${escapeHtml(config.image)}" alt="Imagen de reemplazo para ${escapeHtml(record.Nombre)}" class="h-full w-full object-cover">`}<span class="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-pink-900">${index + 1}</span></div>
                     <div class="flex flex-1 flex-col p-4"><h3 class="text-lg font-bold text-pink-900">${escapeHtml(record.Nombre)}</h3><dl class="mt-2 flex-1 space-y-1 text-sm text-slate-600">${config.cardFields.map((field) => `<div><dt class="inline font-semibold text-slate-700">${escapeHtml(field.label)}: </dt><dd class="inline break-words">${escapeHtml(display(field, record))}</dd></div>`).join('')}</dl><div class="mt-4">${actionButtons(record)}</div></div>
                 </article>`).join('')}</div>`;
             return;
@@ -118,6 +126,17 @@ export const setupCrudModule = async (rootId, config) => {
 
     const openForm = (mode, record = null) => {
         form.reset();
+        if (imageInput) {
+            imageInput.value = '';
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            previewUrl = null;
+            const imageMessage = root.querySelector('[data-image-message]');
+            imageMessage.classList.add('hidden');
+            const currentImage = record?.Imagen ? assetUrl(record.Imagen) : '';
+            imagePreview.src = currentImage;
+            imagePreview.classList.toggle('hidden', !currentImage);
+            imagePlaceholder.classList.toggle('hidden', Boolean(currentImage));
+        }
         form.dataset.mode = mode;
         form.querySelector('[data-id-group]').classList.toggle('hidden', mode === 'create');
         form.elements.recordId.value = record?.id ?? '';
@@ -135,6 +154,28 @@ export const setupCrudModule = async (rootId, config) => {
         show(modal);
         form.elements[config.fields[0].name].focus();
     };
+
+    if (imageInput) {
+        root.querySelector('[data-image-select]').addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files?.[0];
+            const imageMessage = root.querySelector('[data-image-message]');
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                imageInput.value = '';
+                imageMessage.textContent = 'La imagen no debe superar 5 MB.';
+                imageMessage.className = 'text-sm text-red-700';
+                return;
+            }
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            previewUrl = URL.createObjectURL(file);
+            imagePreview.src = previewUrl;
+            imagePreview.classList.remove('hidden');
+            imagePlaceholder.classList.add('hidden');
+            imageMessage.textContent = 'Imagen seleccionada; se guardará al guardar el producto.';
+            imageMessage.className = 'text-sm text-lime-800';
+        });
+    }
 
     root.querySelector('[data-open-create]').addEventListener('click', () => openForm('create'));
     root.querySelectorAll('[data-close-form]').forEach((button) => button.addEventListener('click', closeForm));
@@ -175,9 +216,19 @@ export const setupCrudModule = async (rootId, config) => {
         formMessage.textContent = editing ? 'Guardando cambios...' : 'Guardando registro...';
         formMessage.classList.remove('hidden');
         try {
-            const result = editing
-                ? await api.put(`${config.endpoint}/${encodeURIComponent(form.elements.recordId.value)}`, values)
-                : await api.post(config.endpoint, values);
+            let result;
+            if (config.imageUpload) {
+                const formData = new FormData();
+                Object.entries(values).forEach(([key, value]) => formData.append(key, value ?? ''));
+                if (imageInput.files?.[0]) formData.append('imagen', imageInput.files[0]);
+                result = editing
+                    ? await api.postForm(`${config.endpoint}/${encodeURIComponent(form.elements.recordId.value)}`, formData)
+                    : await api.postForm(config.endpoint, formData);
+            } else {
+                result = editing
+                    ? await api.put(`${config.endpoint}/${encodeURIComponent(form.elements.recordId.value)}`, values)
+                    : await api.post(config.endpoint, values);
+            }
             if (!result.estado) throw new Error(result.error || Object.values(result.errores ?? {}).join('. ') || 'La operación no se completó.');
             closeForm();
             setMessage(result.message || `${config.singular} guardado correctamente.`);
@@ -214,6 +265,10 @@ export const setupCrudModule = async (rootId, config) => {
     });
 
     await reload();
+    if (config.loadListBeforeOptions) {
+        await loadOptions();
+        await reload();
+    }
 };
 
 function renderField(field)

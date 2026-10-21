@@ -5,6 +5,9 @@ class ConexionPDO
     private static ?PDO  $cnn = null;
     public static function connect(): PDO
     {
+        if (self::$cnn instanceof PDO) {
+            return self::$cnn;
+        }
         $pdo = 'mysql:host=' . HOST . ';port=' . PORT . ';dbname=' . DATABASE . ';' . CHARSET;
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

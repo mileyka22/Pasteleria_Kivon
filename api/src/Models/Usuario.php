@@ -18,6 +18,21 @@ class Usuario
         return $usuarios[0] ?? null;
     }
 
+    public static function findByUsername($username)
+    {
+        $usuarios = ConexionPDO::query(
+            "SELECT id, Username, Permiso, Password_hash FROM USUARIO WHERE Username = :username LIMIT 1",
+            [':username' => $username]
+        );
+        return $usuarios[0] ?? null;
+    }
+
+    public static function findSafe($id)
+    {
+        $usuarios = ConexionPDO::query("SELECT id, Username, Permiso FROM USUARIO WHERE id = :id", [':id' => $id]);
+        return $usuarios[0] ?? null;
+    }
+
     public static function add($data)
     {
         $campos = [];

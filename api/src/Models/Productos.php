@@ -29,14 +29,15 @@ class PRODUCTO
 
     public static function add($data)
     {
-        $sql = "INSERT INTO PRODUCTO (Nombre, Precio, Cantidad, Ingrediente, id_personal)
-                VALUES (:Nombre, :Precio, :Cantidad, :Ingrediente, :id_personal)";
+        $sql = "INSERT INTO PRODUCTO (Nombre, Precio, Cantidad, Ingrediente, id_personal, Imagen)
+                VALUES (:Nombre, :Precio, :Cantidad, :Ingrediente, :id_personal, :Imagen)";
         $values = [
             ':Nombre' => $data['Nombre'],
             ':Precio' => $data['Precio'],
             ':Cantidad' => $data['Cantidad'],
             ':Ingrediente' => $data['Ingrediente'],
-            ':id_personal' => $data['id_personal']
+            ':id_personal' => $data['id_personal'],
+            ':Imagen' => $data['Imagen'] ?? null
         ];
         return ConexionPDO::execute($sql, $values, true);
     }
@@ -45,7 +46,7 @@ class PRODUCTO
     {
         $sql = "UPDATE PRODUCTO
                 SET Nombre = :Nombre, Precio = :Precio, Cantidad = :Cantidad,
-                    Ingrediente = :Ingrediente, id_personal = :id_personal
+                    Ingrediente = :Ingrediente, id_personal = :id_personal, Imagen = :Imagen
                 WHERE id = :id";
         $values = [
             ':Nombre' => $data['Nombre'],
@@ -53,6 +54,7 @@ class PRODUCTO
             ':Cantidad' => $data['Cantidad'],
             ':Ingrediente' => $data['Ingrediente'],
             ':id_personal' => $data['id_personal'],
+            ':Imagen' => $data['Imagen'] ?? null,
             ':id' => $id
         ];
         return ConexionPDO::execute($sql, $values);

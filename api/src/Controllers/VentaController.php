@@ -8,6 +8,11 @@ class VentaController
         echo json_encode(Venta::all(), JSON_UNESCAPED_UNICODE);
     }
 
+    public function getDashboard()
+    {
+        echo json_encode(Venta::dashboard(), JSON_UNESCAPED_UNICODE);
+    }
+
     private function getData()
     {
         $data = json_decode(file_get_contents('php://input'), true);

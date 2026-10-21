@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#fdf2f8">
+    <title>Iniciar sesión | Pastelería Kivon</title>
+    <link href="../styles/output.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-pink-50 via-white to-lime-50 text-slate-800">
+    <main class="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-10">
+        <div aria-hidden="true" class="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-pink-200/50 blur-3xl"></div>
+        <div aria-hidden="true" class="absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-lime-200/60 blur-3xl"></div>
+
+        <section class="relative w-full max-w-md rounded-3xl border border-white/80 bg-white/90 p-7 shadow-2xl shadow-pink-900/10 backdrop-blur sm:p-10" aria-labelledby="login-title">
+            <div class="mb-8 text-center">
+                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-200 to-lime-200 text-pink-900 shadow-sm">
+                    <svg aria-hidden="true" class="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 20h16l-1.5-10h-13L4 20Z"/><path d="M5.5 10c0-2 1.2-3.2 3.2-3.2S12 8 12 10c0-2 1.2-3.2 3.2-3.2S18.5 8 18.5 10"/><path d="M7 14h.01M12 14h.01M17 14h.01"/>
+                    </svg>
+                </div>
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-lime-800">Pastelería Kivon</p>
+                <h1 id="login-title" class="mt-2 text-3xl font-bold tracking-tight text-pink-950">Bienvenido</h1>
+                <p class="mt-2 text-sm text-slate-500">Inicia sesión para ingresar al sistema</p>
+            </div>
+
+            <form id="login-form" class="space-y-5" novalidate>
+                <label class="block text-sm font-semibold text-slate-700" for="username">
+                    Usuario
+                    <input id="username" name="Username" type="text" required maxlength="50" autocomplete="username" placeholder="Ingresa tu usuario" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-pink-400 focus:ring-4 focus:ring-pink-100">
+                </label>
+
+                <label class="block text-sm font-semibold text-slate-700" for="password">
+                    Contraseña
+                    <input id="password" name="Password" type="password" required autocomplete="current-password" placeholder="Ingresa tu contraseña" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-pink-400 focus:ring-4 focus:ring-pink-100">
+                </label>
+
+                <p id="login-message" class="hidden rounded-xl px-4 py-3 text-sm" role="status" aria-live="polite"></p>
+
+                <button id="login-submit" type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-pink-700 px-4 py-3 font-semibold text-white shadow-lg shadow-pink-700/20 transition hover:bg-pink-800 focus:outline-none focus:ring-4 focus:ring-pink-200 disabled:cursor-wait disabled:opacity-70">
+                    <span>Ingresar al sistema</span>
+                    <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a1 1 0 0 1 1-1h9.586l-3.293-3.293a1 1 0 0 1 1.414-1.414l5 5a1 1 0 0 1 0 1.414l-5 5a1 1 0 1 1-1.414-1.414L13.586 11H4a1 1 0 0 1-1-1Z" clip-rule="evenodd"/></svg>
+                </button>
+            </form>
+
+            <p class="mt-7 text-center text-xs text-slate-400">Acceso para personal autorizado</p>
+        </section>
+    </main>
+
+    <script type="module" src="../components/login.js"></script>
+</body>
+</html>

@@ -8,6 +8,18 @@ class PedidoController
         echo json_encode(Pedido::all(), JSON_UNESCAPED_UNICODE);
     }
 
+    public function getById($id)
+    {
+        $pedido = Pedido::findWithDetails($id);
+        if (!$pedido) {
+            return $this->respondErrors(['id' => 'No se encontró el pedido solicitado'], 404);
+        }
+        if (empty($pedido['productos'])) {
+            return $this->respondErrors(['productos' => 'El pedido no tiene productos válidos para elaborar un ticket'], 422);
+        }
+        echo json_encode($pedido, JSON_UNESCAPED_UNICODE);
+    }
+
     private function getData()
     {
         $data = json_decode(file_get_contents('php://input'), true);
@@ -18,7 +30,7 @@ class PedidoController
 
     private function validate($data)
     {
-        $allowed = ['Estado', 'Detalle', 'Fecha_entrega', 'id_cliente', 'id_personal'];
+        $allowed = ['Estado', 'Detalle', 'Metodo_de_pago', 'Fecha_entrega', 'id_cliente', 'id_personal', 'productos'];
         $errors = [];
         foreach (array_diff(array_keys($data), $allowed) as $field) $errors[$field] = 'Campo no permitido';
 
@@ -29,6 +41,34 @@ class PedidoController
         }
         if (isset($data['Detalle']) && (!is_string($data['Detalle']) || strlen(trim($data['Detalle'])) > 255)) {
             $errors['Detalle'] = 'El detalle debe tener como maximo 255 caracteres';
+        }
+        $paymentMethod = $data['Metodo_de_pago'] ?? '';
+        if (!in_array($paymentMethod, ['Efectivo', 'Tarjeta', 'QR'], true)) {
+            $errors['Metodo_de_pago'] = 'Selecciona Efectivo, Tarjeta o QR';
+        }
+
+        if (!isset($data['productos']) || !is_array($data['productos']) || count($data['productos']) === 0) {
+            $errors['productos'] = 'Selecciona al menos un producto';
+        } else {
+            $seen = [];
+            foreach ($data['productos'] as $index => $item) {
+                if (!is_array($item) || !isset($item['id_producto']) || !ctype_digit((string) $item['id_producto'])) {
+                    $errors["productos.$index.id_producto"] = 'Selecciona un producto existente';
+                    continue;
+                }
+                $productId = (int) $item['id_producto'];
+                if (!ConexionPDO::query("SELECT id FROM PRODUCTO WHERE id = :id", [':id' => $productId])) {
+                    $errors["productos.$index.id_producto"] = 'El producto no existe';
+                }
+                if (isset($seen[$productId])) {
+                    $errors["productos.$index.id_producto"] = 'No repitas productos; modifica la cantidad de la fila existente';
+                }
+                $seen[$productId] = true;
+                $quantity = $item['Cantidad'] ?? null;
+                if (filter_var($quantity, FILTER_VALIDATE_INT) === false || (int) $quantity <= 0) {
+                    $errors["productos.$index.Cantidad"] = 'La cantidad debe ser un entero mayor que cero';
+                }
+            }
         }
 
         $references = [
@@ -54,9 +94,13 @@ class PedidoController
         return [[
             'Estado' => trim($data['Estado']),
             'Detalle' => isset($data['Detalle']) && trim($data['Detalle']) !== '' ? trim($data['Detalle']) : null,
+            'Metodo_de_pago' => $paymentMethod,
             'Fecha_entrega' => $normalizedDate,
             'id_cliente' => empty($data['id_cliente']) ? null : (int) $data['id_cliente'],
-            'id_personal' => empty($data['id_personal']) ? null : (int) $data['id_personal']
+            'id_personal' => empty($data['id_personal']) ? null : (int) $data['id_personal'],
+            'productos' => array_map(static function ($item) {
+                return ['id_producto' => (int) $item['id_producto'], 'Cantidad' => (int) $item['Cantidad']];
+            }, $data['productos'])
         ], []];
     }
 
@@ -66,7 +110,12 @@ class PedidoController
         if ($errors) return $this->respondErrors($errors);
         [$values, $errors] = $this->validate($data);
         if ($errors) return $this->respondErrors($errors);
-        echo json_encode(['estado' => (bool) Pedido::add($values), 'message' => 'Pedido agregado correctamente'], JSON_UNESCAPED_UNICODE);
+        try {
+            $id = Pedido::add($values);
+        } catch (PedidoStockException $error) {
+            return $this->respondErrors($error->errors, 409);
+        }
+        echo json_encode(['estado' => true, 'id' => $id, 'message' => 'Pedido agregado correctamente'], JSON_UNESCAPED_UNICODE);
     }
 
     public function update($id)
@@ -76,7 +125,11 @@ class PedidoController
         [$values, $errors] = $this->validate($data);
         if ($errors) return $this->respondErrors($errors);
         if (!Pedido::find($id)) return $this->respondErrors(['id' => 'Pedido no encontrado'], 404);
-        Pedido::update($id, $values);
+        try {
+            Pedido::update($id, $values);
+        } catch (PedidoStockException $error) {
+            return $this->respondErrors($error->errors, 409);
+        }
         echo json_encode(['estado' => true, 'message' => 'Pedido actualizado correctamente'], JSON_UNESCAPED_UNICODE);
     }
 

@@ -1,6 +1,7 @@
 <?php
 
 namespace App;
+
 class Router{
     protected $routes=[];
     public function add($method,$route,$handler)
@@ -20,7 +21,18 @@ class Router{
                 $pattern=str_replace(['{id}','/'],['([0-9]+)','\/'],$route['route']);
                 $pattern='/^'.$pattern.'$/';
                 if($method===$route['method'] && preg_match($pattern,$uri,$matches))
-                    { array_shift($matches);
+                    {
+                        $publicAuthRoutes = [
+                            'POST /auth/login',
+                            'GET /auth/me',
+                            'POST /auth/logout'
+                        ];
+                        if (!in_array($method . ' ' . $uri, $publicAuthRoutes, true) && !\AuthSession::currentUser()) {
+                            http_response_code(401);
+                            echo json_encode(['estado' => false, 'error' => 'Inicia sesión para continuar'], JSON_UNESCAPED_UNICODE);
+                            return;
+                        }
+                        array_shift($matches);
                         list($controllerName,$methodName)=explode('@',$route['handler']);
                         $controller=new $controllerName();
                         return call_user_func_array([$controller,$methodName],$matches); 

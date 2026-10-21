@@ -4,13 +4,13 @@
 GET http://api.pasteleria/usuario
 
 
-### Agregar usuario
+### Login usuario
 POST http://api.pasteleria/usuario
 
 {
-    "Username": "usuario_prueba",
+    "Username": "Joshe",
     "Permiso": "Administrador",
-    "Password": "123456"
+    "Password": "220509"
 }
 
 

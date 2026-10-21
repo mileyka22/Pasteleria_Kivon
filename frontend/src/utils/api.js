@@ -1,7 +1,10 @@
-const API_URL = 'http://api.pasteleria/';
+const API_URL = new URL('/api/', window.location.origin).href;
+const ASSET_URL = 'http://api.pasteleria/';
+
+export const assetUrl = (path) => path ? new URL(path, ASSET_URL).href : '';
 
 const request = async (endpoint, options = {}) => {
-    const response = await fetch(`${API_URL}${endpoint}`, options);
+    const response = await fetch(`${API_URL}${endpoint}`, { credentials: 'include', ...options });
     const body = await response.text();
     let data;
 
@@ -13,6 +16,9 @@ const request = async (endpoint, options = {}) => {
     }
 
     if (!response.ok) {
+        if (response.status === 401 && !endpoint.startsWith('auth/')) {
+            window.dispatchEvent(new Event('auth:expired'));
+        }
         const validationErrors = Object.values(data.errores ?? {}).join('. ');
         throw new Error(data.message || data.error || validationErrors || `Error HTTP ${response.status}`);
     }
@@ -38,5 +44,6 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     }),
+    postForm: (endpoint, data) => request(endpoint, { method: 'POST', body: data }),
     delete: (endpoint) => request(endpoint, { method: 'DELETE' }),
 };
