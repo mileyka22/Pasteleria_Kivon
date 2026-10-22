@@ -80,6 +80,16 @@ export const setupCrudModule = async (rootId, config) => {
     };
     if (!config.loadListBeforeOptions) await loadOptions();
 
+    if (config.endpoint === 'venta') {
+        const orderSelect = form.elements.id_pedido;
+        const totalInput = form.elements.Total;
+        totalInput.readOnly = true;
+        orderSelect.addEventListener('change', () => {
+            const order = optionMap.get('id_pedido')?.get(String(orderSelect.value));
+            totalInput.value = order ? Number(order.Total || 0).toFixed(2) : '';
+        });
+    }
+
     const display = (field, record) => {
         const value = record[field.name];
         if (field.format === 'currency' && value !== null && value !== '') return `${Number(value).toFixed(2)} Bs`;

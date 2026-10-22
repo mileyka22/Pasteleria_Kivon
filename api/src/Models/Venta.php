@@ -62,6 +62,25 @@ class Venta
         return ConexionPDO::query("SELECT * FROM VENTA ORDER BY id");
     }
 
+    public static function report($startDate, $endDate)
+    {
+        return ConexionPDO::query(
+            "SELECT v.id, v.Fecha, v.Total, v.Metodo_de_pago, v.id_pedido,
+                    CONCAT_WS(' ', per.Nombre, per.Apellidos) AS personal,
+                    CONCAT_WS(' ', c.Nombre, c.Apellidos) AS cliente,
+                    COALESCE((SELECT GROUP_CONCAT(CONCAT(COALESCE(pr.Nombre, 'Producto eliminado'), ' × ', pp.Cantidad, ' (', FORMAT(pp.Precio_unitario, 2), ' Bs)') ORDER BY pp.id SEPARATOR ', ')
+                              FROM PRODUCTO_PEDIDO pp LEFT JOIN PRODUCTO pr ON pr.id = pp.id_producto
+                              WHERE pp.id_pedido = v.id_pedido), '') AS productos
+             FROM VENTA v
+             LEFT JOIN PERSONAL per ON per.id = v.id_personal
+             LEFT JOIN PEDIDO p ON p.id = v.id_pedido
+             LEFT JOIN CLIENTE c ON c.id = p.id_cliente
+             WHERE v.Fecha >= :inicio AND v.Fecha < DATE_ADD(:fin, INTERVAL 1 DAY)
+             ORDER BY v.Fecha, v.id",
+            [':inicio' => $startDate, ':fin' => $endDate]
+        );
+    }
+
     public static function find($id)
     {
         $rows = ConexionPDO::query("SELECT * FROM VENTA WHERE id = :id", [':id' => $id]);
@@ -87,6 +106,15 @@ class Venta
         );
         if ((int) ($rows[0]['lineas'] ?? 0) === 0) return null;
         return round((float) $rows[0]['total'], 2);
+    }
+
+    public static function orderTotal($pedidoId)
+    {
+        $rows = ConexionPDO::query(
+            "SELECT COALESCE(SUM(Cantidad * Precio_unitario), 0) AS total FROM PRODUCTO_PEDIDO WHERE id_pedido = :id",
+            [':id' => $pedidoId]
+        );
+        return round((float) ($rows[0]['total'] ?? 0), 2);
     }
 
     public static function add($data)

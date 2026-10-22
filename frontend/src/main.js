@@ -5,6 +5,7 @@ import { setupPedidosModule } from "./components/PedidosModule.js";
 import { setupHomeDashboard } from "./components/HomeDashboard.js";
 import { normalizeRole, rolePageUrl } from "./components/roleNavigation.js";
 import { api } from "./utils/api.js";
+import { setupReportsModule } from "./components/ReportsModule.js";
 
 const app = document.getElementById('app');
 const sessionButton = document.querySelector('[data-session-button]');
@@ -41,7 +42,7 @@ const checkSession = async () => {
             app.innerHTML = '<section class="rounded-xl border border-pink-200 bg-white p-8 text-center shadow-sm"><h2 class="text-2xl font-bold text-pink-950">Esta cuenta no tiene una interfaz asignada</h2><p class="mt-2 text-slate-600">Contacta al administrador del sistema.</p></section>';
             return;
         }
-        const allowedViews = { administrador: ['home','users','productos','clientes','personal','pedidos','ventas'], ventas: ['home','pedidos','ventas','clientes','productos'], produccion: ['home','pedidos','productos'] }[userRole] || [];
+        const allowedViews = { administrador: ['home','users','productos','clientes','personal','pedidos','ventas','reportes'], ventas: ['home','pedidos','ventas','clientes','productos'], produccion: ['home','pedidos','productos'] }[userRole] || [];
         document.querySelectorAll('[data-view]').forEach((link) => link.classList.toggle('hidden', !allowedViews.includes(link.dataset.view)));
         if (expectedRole && userPage && expectedRole !== userRole) {
             window.location.replace(userPage);
@@ -135,6 +136,7 @@ const views = {
         await loadView('./src/views/ventas.html');
         await setupCrudModule(crudModules.ventas.rootId, crudModules.ventas);
     }
+    ,reportes: async () => { await loadView('./src/views/reportes.html'); await setupReportsModule(); }
 };
 
 document.querySelectorAll('[data-view]').forEach((link) => {
@@ -146,7 +148,7 @@ document.querySelectorAll('[data-view]').forEach((link) => {
         }
         const view = link.dataset.view;
         const role = normalizeRole(currentUser.Permiso);
-        const allowed = { administrador: ['home','users','productos','clientes','personal','pedidos','ventas'], ventas: ['home','pedidos','ventas','clientes','productos'], produccion: ['home','pedidos','productos'] }[role] || [];
+        const allowed = { administrador: ['home','users','productos','clientes','personal','pedidos','ventas','reportes'], ventas: ['home','pedidos','ventas','clientes','productos'], produccion: ['home','pedidos','productos'] }[role] || [];
         if (!views[view] || !allowed.includes(view)) return;
         try {
             await views[view]();

@@ -83,7 +83,9 @@ export const crudModules = {
         ],
         fields: [
             { name: 'Total', label: 'Total (Bs)', type: 'number', required: true, min: 0, step: '0.01' },
-            { name: 'Metodo_de_pago', label: 'Metodo de pago', required: true, maxLength: 255 },
+            { name: 'Metodo_de_pago', label: 'Metodo de pago', type: 'select', required: true, options: [
+                { value: 'Transferencia QR', label: 'Transferencia QR' }, { value: 'Tarjeta de credito', label: 'Tarjeta de credito' }, { value: 'Efectivo', label: 'Efectivo' }
+            ] },
             staffField,
             { name: 'id_pedido', label: 'Pedido relacionado', type: 'select', endpoint: 'pedido', optionLabel: (item) => `Pedido ${item.id} · ${item.Estado}` }
         ]

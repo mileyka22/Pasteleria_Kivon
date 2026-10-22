@@ -3,6 +3,19 @@ require_once "../src/Models/Venta.php";
 
 class VentaController
 {
+    public function report()
+    {
+        $start = $_GET['inicio'] ?? '';
+        $end = $_GET['fin'] ?? '';
+        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $start) || !preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $end)
+            || !checkdate((int) substr($start, 5, 2), (int) substr($start, 8, 2), (int) substr($start, 0, 4))
+            || !checkdate((int) substr($end, 5, 2), (int) substr($end, 8, 2), (int) substr($end, 0, 4)) || $start > $end) {
+            return $this->respondErrors(['fechas' => 'Selecciona un rango de fechas válido']);
+        }
+        $sales = Venta::report($start, $end);
+        echo json_encode(['ventas' => $sales, 'cantidad' => count($sales), 'total' => array_sum(array_map(static fn($sale) => (float) $sale['Total'], $sales))], JSON_UNESCAPED_UNICODE);
+    }
+
     public function getAll()
     {
         echo json_encode(Venta::all(), JSON_UNESCAPED_UNICODE);
@@ -30,10 +43,8 @@ class VentaController
         if (!isset($data['Total']) || !is_numeric($data['Total']) || (float) $data['Total'] < 0) {
             $errors['Total'] = 'El total debe ser un numero mayor o igual a cero';
         }
-        if (!isset($data['Metodo_de_pago']) || !is_string($data['Metodo_de_pago']) || trim($data['Metodo_de_pago']) === '') {
-            $errors['Metodo_de_pago'] = 'El metodo de pago es obligatorio';
-        } elseif (strlen(trim($data['Metodo_de_pago'])) > 255) {
-            $errors['Metodo_de_pago'] = 'El metodo de pago no puede superar 255 caracteres';
+        if (!isset($data['Metodo_de_pago']) || !in_array($data['Metodo_de_pago'], ['Transferencia QR', 'Tarjeta de credito', 'Efectivo'], true)) {
+            $errors['Metodo_de_pago'] = 'Selecciona Transferencia QR, Tarjeta de credito o Efectivo';
         }
 
         foreach (['id_personal' => 'personalExists', 'id_pedido' => 'pedidoExists'] as $field => $check) {
@@ -43,6 +54,10 @@ class VentaController
             }
         }
         if ($errors) return [null, $errors];
+
+        if (!empty($data['id_pedido'])) {
+            $data['Total'] = Venta::orderTotal((int) $data['id_pedido']);
+        }
 
         return [[
             'Total' => (float) $data['Total'],

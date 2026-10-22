@@ -74,6 +74,7 @@ $route->add('DELETE', '/pedido/{id}', 'PedidoController@delete');
 // Direcciones de ventas
 $route->add('GET', '/dashboard', 'VentaController@getDashboard');
 $route->add('GET', '/venta', 'VentaController@getAll');
+$route->add('GET', '/venta/reporte', 'VentaController@report');
 $route->add('POST', '/venta', 'VentaController@add');
 $route->add('PUT', '/venta/{id}', 'VentaController@update');
 $route->add('DELETE', '/venta/{id}', 'VentaController@delete');
