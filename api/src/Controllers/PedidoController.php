@@ -57,6 +57,14 @@ class PedidoController
             $errors['Metodo_de_pago'] = 'Selecciona Efectivo, Tarjeta o QR';
         }
 
+        // Ventas puede editar los datos comerciales del pedido sin cambiar
+        // su estado de elaboración, que pertenece al flujo de Producción.
+        $user = AuthSession::currentUser();
+        if (strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $user['Permiso'] ?? '')) === 'ventas'
+            && isset($data['Estado']) && in_array($data['Estado'], ['En proceso', 'En elaboración', 'Listo para entrega'], true)) {
+            $data['Estado'] = 'Pendiente';
+        }
+
         if (!isset($data['productos']) || !is_array($data['productos']) || count($data['productos']) === 0) {
             $errors['productos'] = 'Selecciona al menos un producto';
         } else {

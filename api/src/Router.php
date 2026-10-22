@@ -43,7 +43,7 @@ class Router
         $role = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', trim($role)));
         if ($role === 'administrador') return true;
         $rules = [
-            'ventas' => ['GET /dashboard', 'GET /pedido', 'GET /pedido/{id}', 'POST /pedido', 'PUT /pedido/{id}', 'GET /clientes', 'POST /clientes', 'PUT /clientes/{id}', 'DELETE /clientes/{id}', 'GET /productos', 'GET /productos/{id}', 'POST /productos', 'POST /productos/{id}', 'PUT /productos/{id}', 'DELETE /productos/{id}', 'GET /venta', 'POST /venta', 'PUT /venta/{id}', 'DELETE /venta/{id}'],
+            'ventas' => ['GET /dashboard', 'GET /pedido', 'GET /pedido/{id}', 'POST /pedido', 'PUT /pedido/{id}', 'GET /clientes', 'POST /clientes', 'PUT /clientes/{id}', 'DELETE /clientes/{id}', 'GET /productos', 'GET /productos/{id}', 'POST /productos', 'POST /productos/{id}', 'PUT /productos/{id}', 'DELETE /productos/{id}', 'GET /personal', 'GET /venta', 'POST /venta', 'PUT /venta/{id}', 'DELETE /venta/{id}'],
             'produccion' => ['GET /dashboard', 'GET /pedido', 'GET /pedido/{id}', 'PUT /pedido/{id}/estado', 'GET /productos', 'GET /productos/{id}', 'POST /productos', 'POST /productos/{id}', 'PUT /productos/{id}', 'DELETE /productos/{id}']
         ];
         foreach ($rules[$role] ?? [] as $rule) {
