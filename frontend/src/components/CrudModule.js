@@ -126,6 +126,14 @@ export const setupCrudModule = async (rootId, config) => {
 
     const openForm = (mode, record = null) => {
         form.reset();
+        if (config.production) {
+            ['Nombre', 'Precio', 'Ingrediente'].forEach((name) => {
+                const field = form.elements[name];
+                if (field) { field.readOnly = mode === 'edit' && name === 'Nombre'; field.disabled = mode === 'edit' && name !== 'Nombre'; }
+            });
+            const imageSection = imageInput?.closest('div.space-y-2');
+            imageSection?.classList.toggle('hidden', mode === 'edit');
+        }
         if (imageInput) {
             imageInput.value = '';
             if (previewUrl) URL.revokeObjectURL(previewUrl);

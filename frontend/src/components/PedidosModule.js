@@ -3,14 +3,15 @@
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = (value) => `${Number(value || 0).toFixed(2)} Bs`;
 
-export async function setupPedidosModule() {
+export async function setupPedidosModule(role = 'administrador') {
+    const production = role === 'produccion';
     const root = document.getElementById('pedidosModule');
     root.innerHTML = `<section class="rounded-lg border border-pink-200 bg-white p-5 shadow-sm sm:p-6">
         <div class="mb-5 flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm font-semibold uppercase tracking-wide text-lime-700">Administracion</p><h2 class="mt-1 text-2xl font-bold text-pink-900">Pedidos</h2></div><button data-create class="rounded-md bg-pink-700 px-4 py-2 font-semibold text-white hover:bg-pink-800">Adicionar pedido</button></div>
         <p data-message class="mb-4 hidden rounded-md px-3 py-2 text-sm" role="status"></p><div data-list></div></section>
         <div data-modal class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-slate-900/50 p-4" role="dialog" aria-modal="true"><section class="my-auto w-full max-w-3xl rounded-lg bg-white p-6 shadow-xl"><div class="mb-5 flex items-center justify-between"><h2 data-title class="text-xl font-bold text-pink-900"></h2><button data-close class="px-2 py-1 text-2xl text-slate-500" aria-label="Cerrar">&times;</button></div>
         <form data-form class="space-y-4"><input type="hidden" name="id"><div class="grid gap-4 sm:grid-cols-2">
-        <label class="text-sm font-medium text-slate-700">Estado<select name="Estado" required class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"><option>Pendiente</option><option>En proceso</option><option>Entregado</option><option>Cancelado</option></select></label>
+        <label class="text-sm font-medium text-slate-700">Estado<select name="Estado" required class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"><option>Pendiente</option><option>En elaboración</option><option>Listo para entrega</option><option>Entregado</option></select></label>
         <label class="text-sm font-medium text-slate-700">Método de pago<select name="Metodo_de_pago" required class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"><option value="">Selecciona un método</option><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="QR">QR</option></select></label>
         <label class="text-sm font-medium text-slate-700">Cliente<select name="id_cliente" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"><option value="">Sin asignar</option></select></label>
         <label data-staff-field class="text-sm font-medium text-slate-700">Responsable<select name="id_personal" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"><option value="">Sin asignar</option></select></label>
@@ -41,6 +42,7 @@ export async function setupPedidosModule() {
             </section>
         </div>
         `;
+    root.querySelector('[data-create]').classList.toggle('hidden', production);
     const form = root.querySelector('[data-form]'), modal = root.querySelector('[data-modal]'), items = root.querySelector('[data-items]');
     let products = [];
     let productMap = new Map();
@@ -143,15 +145,22 @@ export async function setupPedidosModule() {
         row.querySelector('[data-remove]').addEventListener('click', () => { row.remove(); updateTotal(); });
         if (selected) syncStock(row); updateTotal();
     };
+    const states = ['Pendiente', 'En elaboración', 'Listo para entrega', 'Entregado'];
+    const statusClass = (state) => ({ 'Pendiente': 'bg-pink-600 text-white', 'En elaboración': 'bg-pink-400 text-pink-950', 'Listo para entrega': 'bg-yellow-300 text-yellow-950', 'Entregado': 'bg-green-500 text-white' }[state] || 'bg-slate-100 text-slate-700');
     const reload = async () => {
-        const records = await api.get('pedido');
+        const records = (await api.get('pedido')).filter((record) => record.Estado !== 'Entregado');
         const rows = records.map((r, index) => {
             const lines = r.productos?.length ? r.productos : [];
-            const action = `<button data-ticket="${esc(r.id)}" class="rounded bg-pink-100 px-3 py-1 font-semibold text-pink-900">Generar ticket</button> <button data-edit="${esc(r.id)}" class="rounded bg-lime-200 px-3 py-1 font-semibold text-lime-950">Modificar</button> <button data-delete="${esc(r.id)}" class="rounded bg-pink-100 px-3 py-1 font-semibold text-pink-900">Eliminar</button>`;
-            return `<tr class="border-t border-pink-100 align-top"><td class="p-3">${index + 1}</td><td class="p-3">${esc(r.cliente || '—')}</td><td class="p-3">${lines.length ? lines.map((p) => esc(p.Nombre || 'Producto eliminado')).join('<br>') : 'Sin productos asociados'}</td><td class="p-3">${lines.length ? lines.map((p) => esc(p.Cantidad)).join('<br>') : '—'}</td><td class="p-3 font-semibold">${money(r.Total)}</td><td class="p-3">${esc(r.Metodo_de_pago || '—')}</td><td class="p-3">${esc(r.Estado)}</td><td class="p-3">${esc(r.Fecha_entrega || '—')}</td><td class="p-3 whitespace-nowrap">${action}</td></tr>`;
+            const action = production ? '' : `<button data-edit="${esc(r.id)}" class="rounded bg-lime-200 px-3 py-1 font-semibold text-lime-950">Modificar</button> <button data-delete="${esc(r.id)}" class="rounded bg-pink-100 px-3 py-1 font-semibold text-pink-900">Eliminar</button>`;
+            const ticket = `<button type="button" data-ticket="${esc(r.id)}" aria-label="Ver ticket del pedido ${esc(r.id)}" class="whitespace-nowrap rounded-md bg-pink-700 px-3 py-2 font-semibold text-white hover:bg-pink-800">Ver ticket</button>`;
+            const state = r.Estado === 'En proceso' ? 'En elaboración' : r.Estado;
+            const next = states[states.indexOf(state) + 1];
+            const statusAction = production && next ? `<button data-next-status="${esc(r.id)}" data-status="${esc(next)}" class="mt-2 block rounded border border-lime-300 px-2 py-1 text-xs font-semibold text-lime-900">Avanzar a ${esc(next)}</button>` : '';
+            return `<tr class="border-t border-pink-100 align-top"><td class="p-3">${esc(r.id)}</td><td class="p-3">${ticket}</td><td class="${production ? 'hidden' : ''} p-3">${esc(r.cliente || '—')}</td><td class="p-3">${lines.length ? lines.map((p) => esc(p.Nombre || 'Producto eliminado')).join('<br>') : 'Sin productos asociados'}</td><td class="p-3">${lines.length ? lines.map((p) => esc(p.Cantidad)).join('<br>') : '—'}</td><td class="p-3">${esc(r.Detalle || '—')}</td><td class="${production ? 'hidden' : ''} p-3 font-semibold">${money(r.Total)}</td><td class="${production ? 'hidden' : ''} p-3">${esc(r.Metodo_de_pago || '—')}</td><td class="p-3"><span class="inline-flex rounded-full px-3 py-1 text-xs font-bold ${statusClass(state)}">${esc(state)}</span>${statusAction}</td><td class="p-3">${esc(r.Fecha_entrega || '—')}</td><td class="p-3 whitespace-nowrap">${action}</td></tr>`;
         }).join('');
-        root.querySelector('[data-list]').innerHTML = `<div class="overflow-x-auto rounded-lg border border-pink-100"><table class="w-full min-w-[74rem] text-left text-sm"><thead class="bg-pink-100 text-pink-950"><tr><th class="p-3">N.º</th><th class="p-3">Cliente</th><th class="p-3">Producto</th><th class="p-3">Cantidad</th><th class="p-3">Total</th><th class="p-3">Método de pago</th><th class="p-3">Estado</th><th class="p-3">Fecha</th><th class="p-3">Acciones</th></tr></thead><tbody>${rows || '<tr><td class="p-4 text-center" colspan="9">No hay pedidos.</td></tr>'}</tbody></table></div>`;
+        root.querySelector('[data-list]').innerHTML = `<div class="overflow-x-auto rounded-lg border border-pink-100"><table class="w-full min-w-[80rem] text-left text-sm"><thead class="bg-pink-100 text-pink-950"><tr><th class="p-3">N.º</th><th class="p-3">Ticket</th><th class="${production ? 'hidden' : ''} p-3">Cliente</th><th class="p-3">Producto</th><th class="p-3">Cantidad</th><th class="p-3">Observaciones</th><th class="${production ? 'hidden' : ''} p-3">Total</th><th class="${production ? 'hidden' : ''} p-3">Método de pago</th><th class="p-3">Estado</th><th class="p-3">Fecha de entrega</th><th class="p-3">Acciones</th></tr></thead><tbody>${rows || '<tr><td class="p-4 text-center" colspan="11">No hay pedidos.</td></tr>'}</tbody></table></div>`;
         root.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => open(records.find((r) => String(r.id) === b.dataset.edit))));
+        root.querySelectorAll('[data-next-status]').forEach((button) => button.addEventListener('click', async () => { button.disabled = true; try { await api.put(`pedido/${button.dataset.nextStatus}/estado`, { Estado: button.dataset.status }); await reload(); notify('Estado actualizado.'); } catch (error) { notify(error.message, true); button.disabled = false; } }));
         root.querySelectorAll('[data-ticket]').forEach((b) => b.addEventListener('click', () => showTicket(b.dataset.ticket)));
         root.querySelectorAll('[data-delete]').forEach((b) => b.addEventListener('click', async () => { if (!confirm(`¿Eliminar el pedido #${b.dataset.delete}?`)) return; try { const result = await api.delete(`pedido/${b.dataset.delete}`); if (!result.estado) throw new Error(Object.values(result.errores || {}).join('. ') || result.error); await reload(); notify(result.message); } catch (e) { notify(e.message, true); } }));
     };
@@ -173,6 +182,7 @@ export async function setupPedidosModule() {
         catch (e) { const msg = root.querySelector('[data-form-message]'); msg.textContent = e.message; msg.className = 'text-sm text-red-700'; } finally { button.disabled = false; }
     });
     await reload();
+    if (production) return;
     try {
         const [loadedProducts, clients, staff] = await Promise.all([
             api.get('productos'), api.get('clientes'), api.get('personal')

@@ -5,7 +5,13 @@ class PedidoController
 {
     public function getAll()
     {
-        echo json_encode(Pedido::all(), JSON_UNESCAPED_UNICODE);
+        $orders = Pedido::all();
+        $user = AuthSession::currentUser();
+        if (strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $user['Permiso'])) === 'produccion') {
+            foreach ($orders as &$order) foreach (['Metodo_de_pago', 'id_cliente', 'id_personal', 'cliente', 'cliente_telefono', 'cliente_direccion', 'Total'] as $field) unset($order[$field]);
+            unset($order);
+        }
+        echo json_encode($orders, JSON_UNESCAPED_UNICODE);
     }
 
     public function getById($id)
@@ -16,6 +22,10 @@ class PedidoController
         }
         if (empty($pedido['productos'])) {
             return $this->respondErrors(['productos' => 'El pedido no tiene productos válidos para elaborar un ticket'], 422);
+        }
+        $user = AuthSession::currentUser();
+        if (strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $user['Permiso'])) === 'produccion') {
+            foreach (['Metodo_de_pago', 'id_cliente', 'id_personal', 'cliente'] as $field) unset($pedido[$field]);
         }
         echo json_encode($pedido, JSON_UNESCAPED_UNICODE);
     }
@@ -110,6 +120,7 @@ class PedidoController
         if ($errors) return $this->respondErrors($errors);
         [$values, $errors] = $this->validate($data);
         if ($errors) return $this->respondErrors($errors);
+        $values['Estado'] = 'Pendiente';
         try {
             $id = Pedido::add($values);
         } catch (PedidoStockException $error) {
@@ -124,7 +135,12 @@ class PedidoController
         if ($errors) return $this->respondErrors($errors);
         [$values, $errors] = $this->validate($data);
         if ($errors) return $this->respondErrors($errors);
-        if (!Pedido::find($id)) return $this->respondErrors(['id' => 'Pedido no encontrado'], 404);
+        $current = Pedido::find($id);
+        if (!$current) return $this->respondErrors(['id' => 'Pedido no encontrado'], 404);
+        $user = AuthSession::currentUser();
+        if (mb_strtolower($user['Permiso']) === 'ventas' && $values['Estado'] !== $current['Estado']) {
+            return $this->respondErrors(['Estado' => 'Ventas no puede cambiar el estado de elaboración'], 403);
+        }
         try {
             Pedido::update($id, $values);
         } catch (PedidoStockException $error) {
@@ -133,6 +149,16 @@ class PedidoController
         echo json_encode(['estado' => true, 'message' => 'Pedido actualizado correctamente'], JSON_UNESCAPED_UNICODE);
     }
 
+    public function updateStatus($id)
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $allowed = ['En elaboración', 'Listo para entrega', 'Entregado'];
+        if (!is_array($data) || !in_array($data['Estado'] ?? null, $allowed, true)) return $this->respondErrors(['Estado' => 'Estado inválido'], 400);
+        $result = Pedido::updateStatus($id, $data['Estado']);
+        if ($result === 'missing') return $this->respondErrors(['id' => 'Pedido no encontrado'], 404);
+        if ($result === 'transition') return $this->respondErrors(['Estado' => 'La transición debe seguir Pendiente → En elaboración → Listo para entrega → Entregado'], 409);
+        echo json_encode(['estado' => true, 'message' => 'Estado actualizado correctamente'], JSON_UNESCAPED_UNICODE);
+    }
     public function delete($id)
     {
         if (!Pedido::find($id)) return $this->respondErrors(['id' => 'Pedido no encontrado'], 404);

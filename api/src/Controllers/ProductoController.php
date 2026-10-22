@@ -115,6 +115,10 @@ class ProductoController
     {
         [$data, $jsonErrors] = $this->getJsonData();
         if ($jsonErrors) return $this->respondErrors($jsonErrors);
+        $user = AuthSession::currentUser();
+        if (in_array(mb_strtolower(strtr($user['Permiso'], ['ó' => 'o'])), ['ventas', 'produccion'], true) && !empty($data['id_personal'])) {
+            return $this->respondErrors(['id_personal' => 'Este perfil no puede asignar personal al producto'], 403);
+        }
         [$values, $errors] = $this->normalizeAndValidate($data);
         if ($errors) return $this->respondErrors($errors);
         [$image, $imageError] = $this->storeImage();
@@ -137,6 +141,21 @@ class ProductoController
         if ($errors) return $this->respondErrors($errors);
         $current = PRODUCTO::find($id);
         if (!$current) return $this->respondErrors(['id' => 'Producto no encontrado'], 404);
+        $user = AuthSession::currentUser();
+        if (mb_strtolower($user['Permiso']) === 'ventas') {
+            if (array_key_exists('id_personal', $data)) return $this->respondErrors(['id_personal' => 'Ventas no puede modificar la asignación de personal'], 403);
+            $values['id_personal'] = $current['id_personal'] ?? null;
+        }
+        if (mb_strtolower(strtr($user['Permiso'], ['ó' => 'o'])) === 'produccion') {
+            if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] !== UPLOAD_ERR_NO_FILE) return $this->respondErrors(['imagen' => 'Producción solo puede actualizar existencias']);
+            if (!array_key_exists('id_personal', $data)) $values['id_personal'] = $current['id_personal'] ?? null;
+            foreach (['Nombre', 'Precio', 'Ingrediente', 'id_personal'] as $field) {
+                $old = $current[$field] ?? null;
+                $new = $values[$field] ?? null;
+                if ($field === 'Precio' && round((float) $old, 2) === round((float) $new, 2)) continue;
+                if ((string) $old !== (string) $new) return $this->respondErrors([$field => 'Producción solo puede actualizar existencias'], 403);
+            }
+        }
         [$image, $imageError] = $this->storeImage();
         if ($imageError) return $this->respondErrors(['imagen' => $imageError]);
         $values['Imagen'] = $image ?? $current['Imagen'] ?? null;

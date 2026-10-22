@@ -68,6 +68,7 @@ $route->add('GET', '/pedido', 'PedidoController@getAll');
 $route->add('GET', '/pedido/{id}', 'PedidoController@getById');
 $route->add('POST', '/pedido', 'PedidoController@add');
 $route->add('PUT', '/pedido/{id}', 'PedidoController@update');
+$route->add('PUT', '/pedido/{id}/estado', 'PedidoController@updateStatus');
 $route->add('DELETE', '/pedido/{id}', 'PedidoController@delete');
 
 // Direcciones de ventas

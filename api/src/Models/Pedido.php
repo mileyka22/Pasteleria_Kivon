@@ -166,6 +166,32 @@ class Pedido
         ];
     }
 
+    public static function updateStatus($id, $status)
+    {
+        $db = ConexionPDO::connect();
+        $db->beginTransaction();
+        try {
+            $stmt = $db->prepare("SELECT Estado FROM PEDIDO WHERE id = :id FOR UPDATE");
+            $stmt->execute([':id' => $id]);
+            $current = $stmt->fetchColumn();
+            if ($current === false) { $db->rollBack(); return 'missing'; }
+            $flow = ['Pendiente', 'En elaboración', 'Listo para entrega', 'Entregado'];
+            $from = $current === 'En proceso' ? 1 : array_search($current, $flow, true);
+            $to = array_search($status, $flow, true);
+            if ($from === false || $to !== $from + 1) { $db->rollBack(); return 'transition'; }
+            $db->prepare("UPDATE PEDIDO SET Estado = :estado WHERE id = :id")->execute([':estado' => $status, ':id' => $id]);
+            if ($status === 'Entregado') {
+                $exists = $db->prepare("SELECT id FROM VENTA WHERE id_pedido = :id LIMIT 1");
+                $exists->execute([':id' => $id]);
+                if (!$exists->fetchColumn()) {
+                    $sale = $db->prepare("INSERT INTO VENTA (Total, Metodo_de_pago, id_personal, id_pedido) SELECT COALESCE(SUM(pp.Cantidad * pp.Precio_unitario), 0), COALESCE(p.Metodo_de_pago, 'Por verificar'), p.id_personal, p.id FROM PEDIDO p LEFT JOIN PRODUCTO_PEDIDO pp ON pp.id_pedido = p.id WHERE p.id = :id GROUP BY p.id");
+                    $sale->execute([':id' => $id]);
+                }
+            }
+            $db->commit();
+            return true;
+        } catch (Throwable $error) { if ($db->inTransaction()) $db->rollBack(); throw $error; }
+    }
     public static function delete($id)
     {
         $stmt = ConexionPDO::connect()->prepare("DELETE FROM PEDIDO WHERE id = :id");

@@ -36,6 +36,13 @@ const checkSession = async () => {
         const expectedRole = normalizeRole(document.body.dataset.rolePage);
         const userRole = normalizeRole(currentUser.Permiso);
         const userPage = rolePageUrl(userRole);
+        if (!userPage) {
+            setSessionButton(true);
+            app.innerHTML = '<section class="rounded-xl border border-pink-200 bg-white p-8 text-center shadow-sm"><h2 class="text-2xl font-bold text-pink-950">Esta cuenta no tiene una interfaz asignada</h2><p class="mt-2 text-slate-600">Contacta al administrador del sistema.</p></section>';
+            return;
+        }
+        const allowedViews = { administrador: ['home','users','productos','clientes','personal','pedidos','ventas'], ventas: ['home','pedidos','ventas','clientes','productos'], produccion: ['home','pedidos','productos'] }[userRole] || [];
+        document.querySelectorAll('[data-view]').forEach((link) => link.classList.toggle('hidden', !allowedViews.includes(link.dataset.view)));
         if (expectedRole && userPage && expectedRole !== userRole) {
             window.location.replace(userPage);
             return;
@@ -95,7 +102,22 @@ const views = {
     },
     productos: async () => {
         await loadView('./src/views/productos.html');
-        await setupCrudModule(crudModules.productos.rootId, crudModules.productos);
+        const role = normalizeRole(currentUser?.Permiso);
+        const productConfig = role === 'produccion'
+            ? {
+                ...crudModules.productos,
+                production: true,
+                fields: crudModules.productos.fields.filter((field) => field.name !== 'id_personal'),
+                cardFields: crudModules.productos.cardFields.filter((field) => field.name !== 'id_personal')
+            }
+            : role === 'ventas'
+                ? {
+                    ...crudModules.productos,
+                    fields: crudModules.productos.fields.filter((field) => field.name !== 'id_personal'),
+                    cardFields: crudModules.productos.cardFields.filter((field) => field.name !== 'id_personal')
+                }
+                : crudModules.productos;
+        await setupCrudModule(crudModules.productos.rootId, productConfig);
     },
     clientes: async () => {
         await loadView('./src/views/clientes.html');
@@ -107,7 +129,7 @@ const views = {
     },
     pedidos: async () => {
         await loadView('./src/views/pedidos.html');
-        await setupPedidosModule();
+        await setupPedidosModule(normalizeRole(currentUser?.Permiso));
     },
     ventas: async () => {
         await loadView('./src/views/ventas.html');
@@ -123,7 +145,9 @@ document.querySelectorAll('[data-view]').forEach((link) => {
             return;
         }
         const view = link.dataset.view;
-        if (!views[view]) return;
+        const role = normalizeRole(currentUser.Permiso);
+        const allowed = { administrador: ['home','users','productos','clientes','personal','pedidos','ventas'], ventas: ['home','pedidos','ventas','clientes','productos'], produccion: ['home','pedidos','productos'] }[role] || [];
+        if (!views[view] || !allowed.includes(view)) return;
         try {
             await views[view]();
         } catch (error) {
