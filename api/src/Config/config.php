@@ -1,5 +1,5 @@
 <?php
-$path = dirname(DIR, 2) . '/.env';
+$path = dirname(_DIR_, 2) . '/.env';
 
 // 1. Si el archivo .env existe (en local), lo lee. Si no existe (en Render), usa las variables del sistema.
 if (file_exists($path)) {
