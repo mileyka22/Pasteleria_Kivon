@@ -62,20 +62,16 @@ class Venta
         return ConexionPDO::query("SELECT * FROM VENTA ORDER BY id");
     }
 
-    public static function report($startDate, $endDate)
+    public static function reporteVentas($startDate, $endDate)
     {
         return ConexionPDO::query(
-            "SELECT v.id, v.Fecha, v.Total, v.Metodo_de_pago, v.id_pedido,
-                    CONCAT_WS(' ', per.Nombre, per.Apellidos) AS personal,
-                    CONCAT_WS(' ', c.Nombre, c.Apellidos) AS cliente,
-                    COALESCE((SELECT GROUP_CONCAT(CONCAT(COALESCE(pr.Nombre, 'Producto eliminado'), ' × ', pp.Cantidad, ' (', FORMAT(pp.Precio_unitario, 2), ' Bs)') ORDER BY pp.id SEPARATOR ', ')
-                              FROM PRODUCTO_PEDIDO pp LEFT JOIN PRODUCTO pr ON pr.id = pp.id_producto
-                              WHERE pp.id_pedido = v.id_pedido), '') AS productos
+            "SELECT v.*, pe.*, per.*,
+                    v.id AS venta_id, pe.id AS pedido_id, per.id AS personal_id,
+                    per.Nombre AS personal
              FROM VENTA v
-             LEFT JOIN PERSONAL per ON per.id = v.id_personal
-             LEFT JOIN PEDIDO p ON p.id = v.id_pedido
-             LEFT JOIN CLIENTE c ON c.id = p.id_cliente
-             WHERE v.Fecha >= :inicio AND v.Fecha < DATE_ADD(:fin, INTERVAL 1 DAY)
+             INNER JOIN PEDIDO pe ON v.id_pedido = pe.ID
+             INNER JOIN PERSONAL per ON per.ID = v.id_personal
+             WHERE v.Fecha BETWEEN CONCAT(:inicio, ' 00:00:00') AND CONCAT(:fin, ' 23:59:59')
              ORDER BY v.Fecha, v.id",
             [':inicio' => $startDate, ':fin' => $endDate]
         );

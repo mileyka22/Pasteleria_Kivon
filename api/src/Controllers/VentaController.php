@@ -3,16 +3,23 @@ require_once "../src/Models/Venta.php";
 
 class VentaController
 {
-    public function report()
+    public function reporteVentas()
     {
-        $start = $_GET['inicio'] ?? '';
-        $end = $_GET['fin'] ?? '';
-        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $start) || !preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $end)
-            || !checkdate((int) substr($start, 5, 2), (int) substr($start, 8, 2), (int) substr($start, 0, 4))
-            || !checkdate((int) substr($end, 5, 2), (int) substr($end, 8, 2), (int) substr($end, 0, 4)) || $start > $end) {
+        $dates = $_GET;
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+            $body = json_decode(file_get_contents('php://input'), true);
+            if (is_array($body)) $dates = $body;
+        }
+        $start = $dates['inicio'] ?? '';
+        $end = $dates['fin'] ?? '';
+        $validDate = static function ($value) {
+            if (!is_string($value) || !preg_match('/\A([0-9]{4})-([0-9]{2})-([0-9]{2})\z/', $value, $parts)) return false;
+            return checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1]);
+        };
+        if (!$validDate($start) || !$validDate($end) || $start > $end) {
             return $this->respondErrors(['fechas' => 'Selecciona un rango de fechas válido']);
         }
-        $sales = Venta::report($start, $end);
+        $sales = Venta::reporteVentas($start, $end);
         echo json_encode(['ventas' => $sales, 'cantidad' => count($sales), 'total' => array_sum(array_map(static fn($sale) => (float) $sale['Total'], $sales))], JSON_UNESCAPED_UNICODE);
     }
 
