@@ -1,17 +1,16 @@
 import { rolePageUrl } from './roleNavigation.js';
+import { API_BASE_URL } from '../utils/api.js';
 
 const form = document.getElementById('login-form');
 const message = document.getElementById('login-message');
 const submit = document.getElementById('login-submit');
-const apiUrl = new URL('/api/', window.location.origin);
-
 const redirectForUser = (user) => {
     const destination = rolePageUrl(user?.Permiso);
     if (destination) window.location.replace(destination);
     return Boolean(destination);
 };
 
-fetch(new URL('auth/me', apiUrl), { credentials: 'include' })
+fetch(new URL('auth/me', API_BASE_URL), { credentials: 'include' })
     .then((response) => response.ok ? response.json() : null)
     .then((result) => {
         if (result?.user) redirectForUser(result.user);
@@ -34,7 +33,7 @@ form.addEventListener('submit', async (event) => {
     message.classList.add('hidden');
 
     try {
-        const response = await fetch(new URL('auth/login', apiUrl), {
+        const response = await fetch(new URL('auth/login', API_BASE_URL), {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },

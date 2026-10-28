@@ -1,10 +1,10 @@
-const API_URL = new URL('/api/', window.location.origin).href;
-const ASSET_URL = 'http://api.pasteleria/';
+// export const API_BASE_URL = 'http://api.pasteleria';
+export const API_BASE_URL = 'https://pasteleria-kivon.onrender.com/';
 
-export const assetUrl = (path) => path ? new URL(path, ASSET_URL).href : '';
+export const assetUrl = (path) => path ? new URL(path, API_BASE_URL).href : '';
 
 const request = async (endpoint, options = {}) => {
-    const response = await fetch(`${API_URL}${endpoint}`, { credentials: 'include', ...options });
+    const response = await fetch(new URL(endpoint, API_BASE_URL), { credentials: 'include', ...options });
     const body = await response.text();
     let data;
 

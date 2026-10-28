@@ -9,14 +9,15 @@ class AuthSession
         if (session_status() === PHP_SESSION_ACTIVE) return;
 
         ini_set('session.use_strict_mode', '1');
-        $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
         session_name('KIVONSESSID');
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
             'secure' => $secure,
             'httponly' => true,
-            'samesite' => 'Lax'
+            'samesite' => $secure ? 'None' : 'Lax'
         ]);
         session_start();
     }
