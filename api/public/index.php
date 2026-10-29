@@ -1,26 +1,63 @@
 <?php
-
 header('Content-Type: application/json; charset=utf-8');
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
 $allowedOrigins = [
-    'https://pasteleria-kivon-1.onrender.com'
+    'https://pasteleria-kivon-1.onrender.com',
+    'https://pasteleria-kivon.onrender.com', // Añadida por seguridad si usas el subdominio previo
+    'http://www.pasteleria.com',
+    'http://api.pasteleria' // Añadido el dominio interno de tu API en WampServer
 ];
 
-if (in_array($origin, $allowedOrigins, true)) {
-    header('Access-Control-Allow-Origin: ' . $origin);
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization');
-    header("Vary: Origin");
-    header('Access-Control-Allow-Credentials: true');
+// Expresión regular corregida para capturar también dominios locales sin terminación .local/.test
+$isLocalOrigin = preg_match(
+    '/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|[a-z0-9-]+(\.(local|test|pasteleria))?)(:\d+)?$/i',
+    $origin
+) === 1;
+
+if (in_array($origin, $allowedOrigins, true) || $isLocalOrigin) {
+    // Forzamos a limpiar cualquier cabecera previa que Apache (.htaccess) haya duplicado
+    header('Access-Control-Allow-Origin: ' . $origin, true);
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS', true);
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With', true);
+    header("Vary: Origin", true);
+    header('Access-Control-Allow-Credentials: true', true);
 }
 
-
+// Responder inmediatamente a las peticiones preflight OPTIONS del navegador
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
+
+// header('Content-Type: application/json; charset=utf-8');
+
+// $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+// $allowedOrigins = [
+//     'https://pasteleria-kivon-1.onrender.com',
+//     'http://www.pasteleria.com'
+// ];
+
+// $isLocalOrigin = preg_match(
+//     '/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|[a-z0-9-]+\.(local|test))(:\d+)?$/i',
+//     $origin
+// ) === 1;
+
+// if (in_array($origin, $allowedOrigins, true) || $isLocalOrigin) {
+//     header('Access-Control-Allow-Origin: ' . $origin);
+//     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+//     header('Access-Control-Allow-Headers: Content-Type, Authorization');
+//     header("Vary: Origin");
+//     header('Access-Control-Allow-Credentials: true');
+// }
+
+
+// if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+//     http_response_code(204);
+//     exit;
+// }
 
 require_once "../src/Router.php";
 require_once "../src/AuthSession.php";

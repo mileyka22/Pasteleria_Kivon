@@ -3,6 +3,13 @@
 
 GET http://api.pasteleria/usuario
 
+### Login al sistema
+POST http://api.pasteleria/auth/login
+
+{
+    "Username": "Miley",
+    "Password": "270609"
+}
 
 ### Login usuario
 POST http://api.pasteleria/usuario
